@@ -1,12 +1,16 @@
-# ROVI
+# ROVI Skills
 
-Personal coding style and architecture skill for AI coding agents.
+Modular coding style and architecture skills for Claude Code.
 
-## What it does
+## Skills
 
-When activated, the agent adopts a specific development philosophy: Clean Architecture with layered separation, interface-first design, strict typing, entity-colocated folder organization, centralized error handling, and direct no-analogy code explanations.
-
-Includes a background documentation lookup agent (`docs-lookup`) that uses Context7 MCP to feed up-to-date docs while you work.
+| Skill | Type | Description |
+|-------|------|-------------|
+| `rovi` | Auto-invoked | Core philosophy: communication, thinking process, style, typing, errors, docs, hard rules |
+| `rovi-architecture` | Auto-invoked | Clean Architecture, layered separation, folder structure, patterns |
+| `rovi-store` | Auto-invoked | State management: one store per entity, loading/error state, optimistic updates |
+| `rovi-testing` | Auto-invoked | Testing philosophy: manual-first, unit/integration, mock interfaces |
+| `rovi-review` | User-invoked (`/rovi-review`) | Code review against rovi standards with checklist |
 
 ## Stack
 
@@ -17,9 +21,9 @@ TypeScript, JavaScript, Python, Go | React, Next.js, Vue | NestJS, Fastify, Flas
 ### Claude Code (personal)
 
 ```bash
-# Skill
+# All skills
 mkdir -p ~/.claude/skills
-cp -r rovi ~/.claude/skills/
+cp -r rovi rovi-architecture rovi-store rovi-testing rovi-review ~/.claude/skills/
 
 # Agent (optional — requires Context7 MCP)
 mkdir -p ~/.claude/agents
@@ -29,31 +33,43 @@ cp .claude/agents/docs-lookup.md ~/.claude/agents/
 ### Claude Code (project-level, shared via git)
 
 ```bash
-# Skill
-cp -r rovi .claude/skills/
-git add .claude/skills/rovi
+# All skills
+mkdir -p .claude/skills
+cp -r rovi rovi-architecture rovi-store rovi-testing rovi-review .claude/skills/
 
 # Agent (optional)
+mkdir -p .claude/agents
 cp .claude/agents/docs-lookup.md .claude/agents/
-git add .claude/agents/docs-lookup.md
 
-git commit -m "Add rovi coding style skill"
+git add .claude/
+git commit -m "Add rovi skills"
 ```
 
 ## Structure
 
 ```
 rovi-skills/
-├── rovi/
-│   ├── SKILL.md                          # Main skill file
+├── rovi/                           # Core philosophy
+│   ├── SKILL.md
 │   └── references/
-│       ├── layer-examples.md             # Domain, repository, use case, controller patterns
-│       ├── documentation-examples.md     # JSDoc/TSDoc patterns
-│       ├── store-examples.md             # State management patterns
-│       └── testing-examples.md           # Testing patterns
+│       └── documentation-examples.md
+├── rovi-architecture/              # Clean Architecture + folders
+│   ├── SKILL.md
+│   └── references/
+│       └── layer-examples.md
+├── rovi-store/                     # State management
+│   ├── SKILL.md
+│   └── references/
+│       └── store-examples.md
+├── rovi-testing/                   # Testing
+│   ├── SKILL.md
+│   └── references/
+│       └── testing-examples.md
+├── rovi-review/                    # Code review (user-invoked)
+│   └── SKILL.md
 ├── .claude/
 │   └── agents/
-│       └── docs-lookup.md                # Background docs lookup agent (Context7)
+│       └── docs-lookup.md          # Background docs lookup (Context7)
 └── README.md
 ```
 
@@ -79,6 +95,16 @@ The `docs-lookup` agent requires Context7 MCP. If not configured, the skill will
 ```
 
 Without Context7, the skill will offer WebSearch as fallback.
+
+## Best Practices Applied
+
+- **Modular skills** — one skill per concern, not a monolith
+- **YAML frontmatter** — `name`, `description`, and skill-specific fields
+- **`${CLAUDE_SKILL_DIR}`** — portable references to bundled files
+- **`disable-model-invocation`** — task skills only run when user invokes them
+- **`allowed-tools` scoped** — rovi-review restricted to Read, Glob, Grep
+- **`context: fork`** — rovi-review runs in isolated subagent
+- **Dynamic context** — rovi-review injects `git diff` output automatically
 
 ## License
 

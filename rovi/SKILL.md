@@ -1,17 +1,9 @@
 ---
 name: rovi
-description: "Full-stack coding style, Clean Architecture patterns, and development philosophy. Use when writing code, designing systems, reviewing or refactoring code, planning architecture, structuring folders, creating interfaces, implementing repositories, building use cases, setting up state management, writing tests, handling errors, or explaining technical concepts. Enforces interface-first design, layered separation, strict typing, feature-based folder organization, centralized error handling, visual section separators in files, and direct no-analogy explanations. Applies to any language or framework in the stack: TypeScript, JavaScript, Python, Go, React, Next.js, Vue, NestJS, Fastify, Flask, FastAPI, Gin."
+description: "Core coding philosophy: communication rules, thinking process, style guide, naming conventions, strict typing, error handling patterns, documentation standards, and hard rules. Auto-loads when writing, reviewing, or explaining code in TypeScript, JavaScript, Python, Go, React, Next.js, Vue, NestJS, Fastify, Flask, FastAPI, or Gin."
 ---
 
-# ROVI — Style & Architecture Skill
-
-## Overview
-
-This skill defines a complete development philosophy: how to think before coding, how to structure projects, how to write and document code, and how to communicate technical concepts. It is framework-agnostic — the same principles apply regardless of the stack.
-
-**Tech stack:** TypeScript, JavaScript, Python, Go | React, Next.js, Vue | NestJS, Fastify, Flask, FastAPI, Gin | Jotai, Redux, Zustand, Pinia
-
----
+# ROVI — Core Philosophy
 
 ## Communication Rules
 
@@ -35,96 +27,6 @@ Before writing any code, follow this sequence:
 5. **Confirm structural decisions.** Before creating folders, naming anything, or choosing how to organize the project — ask. Every framework and context has its own conventions. Do not assume folder names, entry point patterns, or project layout from previous experience or from the examples in this skill. Present a proposal and wait for confirmation.
 6. **Implement.** Start with domain (entities, interfaces), then use cases, then infrastructure and presentation.
 7. **Test.** Manual testing first (Postman or browser). Then write automated tests. Verify edge cases from step 1.
-
----
-
-## Architecture
-
-### Clean Architecture (Layered)
-
-These are dependency layers, not folder names. All layers coexist inside each entity's folder.
-
-```
-domain layer          → Entities, interfaces, business types. Zero external dependencies.
-application layer     → Use cases. Orchestrate the domain. Depend only on interfaces.
-infrastructure layer  → Concrete implementations: repositories, external APIs, DB.
-presentation layer    → Controllers, routes, UI. The outermost layer.
-```
-
-### Core Principles
-
-- **Interfaces for everything that might change.** Swapping the database or a provider should only change the infrastructure layer.
-- **Repository pattern mandatory** for data access.
-- **Dependency injection.** Never instantiate dependencies inside a class. Always received via constructor or parameter.
-- **Single responsibility:** if a function does more than 2 things, split it.
-- **Purposeful abstractions:** every interface exists to enable swapping implementations or facilitate testing. No "just in case" interfaces.
-
-### Patterns
-
-Repository, Service, UseCase/Interactor, Ports & Adapters, Factory, Strategy, Observer/EventEmitter.
-
-### Layer Implementation
-
-Read `references/layer-examples.md` for code examples of each layer.
-
----
-
-## Folder Structure
-
-### Principles
-
-- **Feature-based organization.** Each feature is autonomous. Never mix code from one feature into another.
-- **Global vs local.** If something is used by only one feature, it lives inside that feature. If shared, it goes up to the global level.
-- **Shared infrastructure separated.** DB config, server setup, cloud clients — separated from business features.
-- **One store per entity** (frontend). Never a mega-store.
-- **File naming:** `camelCase` for stores and utilities, `PascalCase` for components and views.
-
-### Important
-
-The examples below are **references**, not rigid templates. Folder names, nesting depth, and grouping depend on the framework and the project. Always confirm the structure before creating it. What matters is the layered separation principle, not the specific names.
-
-### Frontend (reference)
-
-```
-src/
-  assets/
-  components/               → Global reusable components
-  core/
-    layout/
-    store/                  → Base store configuration
-  [feature-group]/
-    [FeatureName]/
-      components/           → Feature-specific components
-      store/                → Feature-specific stores
-      views/                → Feature pages
-  utils/
-```
-
-### Backend (reference)
-
-Everything related to an entity lives inside that entity's folder. You work on one entity, you stay in one place.
-
-```
-src/
-  [shared-config]/
-    db/
-    server/
-  modules/
-    [EntityName]/
-      entities/
-      interfaces/
-      types/
-      use-cases/
-      dto/
-      repositories/
-      services/
-      controllers/
-      middleware/
-  utils/
-    errors/
-```
-
-Names in `[brackets]` are placeholders — they change per project and framework. The key rule: everything for one entity is colocated, no jumping between folders to find related code.
 
 ---
 
@@ -193,7 +95,7 @@ Use block comment separators inside files with multiple logical sections:
 - **Use `@example`** when the API is not obvious.
 - Comments in **Spanish** by default, naming in **English**.
 
-Read `references/documentation-examples.md` for JSDoc patterns.
+Read `${CLAUDE_SKILL_DIR}/references/documentation-examples.md` for JSDoc patterns.
 
 ---
 
@@ -241,34 +143,6 @@ class UnauthorizedError extends AppError {
 
 ---
 
-## State Management (Frontend)
-
-Consistent structure regardless of the state library:
-
-- One store per entity. Never a mega-store.
-- Always `isLoading` and `error` as state. Each store manages its own loading and error state.
-- Try-catch on every async action. Always with `finally` to reset `isLoading`.
-- Visually separated sections: state, computed/derived, actions.
-- Optimistic local state updates when appropriate (push to array after create, filter after delete).
-
-Read `references/store-examples.md` for a full store pattern.
-
----
-
-## Testing
-
-1. Implement the feature completely.
-2. Test manually — endpoints with Postman or similar, UI in the browser.
-3. Once it works, write automated tests.
-
-- Unit tests for business logic (domain and use cases).
-- Integration tests for repositories and endpoints.
-- Mock the interfaces — another reason everything has an interface.
-
-Read `references/testing-examples.md` for test patterns.
-
----
-
 ## Hard Rules
 
 ### Never
@@ -289,7 +163,7 @@ Read `references/testing-examples.md` for test patterns.
 - Define interfaces before implementing.
 - Document with JSDoc/TSDoc when there is a non-obvious "why" behind the code.
 - Type strictly. `strict: true`, no `any`, explicit types.
-- Structure in layers. Domain → Application → Infrastructure → Presentation.
+- Structure in layers. Domain > Application > Infrastructure > Presentation.
 - Centralize errors in a dedicated module with clear types.
 - Test. Manual first, automated after.
 - Think about swappability. Changing an external dependency should touch one file ideally.
