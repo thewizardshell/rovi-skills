@@ -38,27 +38,24 @@ src/
 
 ## Controller (Router)
 
-Instantiate dependencies inline, same philosophy as Fastify.
+Instantiate dependencies inline via `Depends()`, same philosophy as Fastify.
 
 ```python
+# Pattern: factory function builds the DI chain, router uses Depends()
 from fastapi import APIRouter, Depends
-from .service import OwnerService
-from .repository import OwnerRepository
-from .types.schemas import CreateOwnerSchema, OwnerResponse
-from src.config.database import get_db
 
-router = APIRouter(prefix="/owners", tags=["owners"])
+router = APIRouter(prefix="/entities", tags=["entities"])
 
-def get_owner_service(db=Depends(get_db)) -> OwnerService:
-    repository = OwnerRepository(db)
-    return OwnerService(repository)
+def get_entity_service(db=Depends(get_db)):
+    repository = EntityRepository(db)
+    return EntityService(repository)
 
-@router.get("/", response_model=list[OwnerResponse])
-async def find_all(service: OwnerService = Depends(get_owner_service)):
+@router.get("/", response_model=list[EntityResponse])
+async def find_all(service: EntityService = Depends(get_entity_service)):
     return await service.find_all()
 
-@router.post("/", response_model=OwnerResponse, status_code=201)
-async def create(data: CreateOwnerSchema, service: OwnerService = Depends(get_owner_service)):
+@router.post("/", response_model=EntityResponse, status_code=201)
+async def create(data: CreateEntitySchema, service: EntityService = Depends(get_entity_service)):
     return await service.create(data)
 ```
 
@@ -69,20 +66,16 @@ async def create(data: CreateOwnerSchema, service: OwnerService = Depends(get_ow
 Constructor injection via `__init__`.
 
 ```python
-from .types.interface import IOwnerRepository
-from src.utils.errors import DuplicateError
-
-class OwnerService:
-    def __init__(self, owner_repository: IOwnerRepository):
-        self._repository = owner_repository
+# Pattern: constructor receives interface, methods have business logic
+class EntityService:
+    def __init__(self, entity_repository: IEntityRepository):
+        self._repository = entity_repository
 
     async def find_all(self):
         return await self._repository.find_all()
 
     async def create(self, data):
-        existing = await self._repository.find_by_email(data.email)
-        if existing:
-            raise DuplicateError("Owner", "email")
+        # Business validation lives here
         return await self._repository.create(data)
 ```
 
@@ -93,34 +86,22 @@ class OwnerService:
 ABC as interface, concrete class implementing it.
 
 ```python
+# Pattern: ABC defines contract, class implements it
 # types/interface.py
 from abc import ABC, abstractmethod
 
-class IOwnerRepository(ABC):
+class IEntityRepository(ABC):
     @abstractmethod
-    async def find_all(self) -> list:
-        ...
+    async def find_all(self) -> list: ...
 
     @abstractmethod
-    async def find_by_email(self, email: str):
-        ...
-
-    @abstractmethod
-    async def create(self, data) -> dict:
-        ...
+    async def create(self, data) -> dict: ...
 
 # repository.py
-from .types.interface import IOwnerRepository
-
-class OwnerRepository(IOwnerRepository):
+class EntityRepository(IEntityRepository):
     def __init__(self, db):
         self._db = db
-
-    async def find_all(self) -> list:
-        return await self._db.owners.find_many()
-
-    async def find_by_email(self, email: str):
-        return await self._db.owners.find_first(where={"email": email})
+    # Implementation here
 ```
 
 ---

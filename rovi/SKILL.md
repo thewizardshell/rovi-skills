@@ -36,8 +36,9 @@ Before writing any code, follow this sequence:
 3. **Look up while working — continuously.** Every time you are about to use a library, framework, or API — spawn a `docs-lookup` agent **in background**. This is not a one-time step. It happens throughout the entire session: at the start for the initial stack, and again every time you move to a different part of the project that involves a different library or tool. Do not wait for results — keep working and incorporate the info as it arrives. Launch multiple background lookups in parallel if needed. The agent feeds you context while you code, like a coworker looking things up for you.
 4. **Design the contracts.** Define interfaces first. Establish input/output types. Identify possible errors.
 5. **Confirm structural decisions.** Before creating folders, naming anything, or choosing how to organize the project — ask. Every framework and context has its own conventions. Do not assume folder names, entry point patterns, or project layout from previous experience or from the examples in this skill. Present a proposal and wait for confirmation.
-6. **Implement.** Start with domain (entities, interfaces), then use cases, then infrastructure and presentation.
-7. **Test.** Manual testing first (Postman or browser). Then write automated tests. Verify edge cases from step 1.
+6. **Examples are patterns, not literal code.** Code examples in these skills show the structure and flow — how pieces connect. Never copy them verbatim. Extract the pattern, adapt it to the current project, and write clean production code. If an example has a console.log, a TODO, or an empty block, that is incidental — do not reproduce it.
+7. **Implement.** Start with domain (entities, interfaces), then use cases, then infrastructure and presentation.
+8. **Test.** Manual testing first (Postman or browser). Then write automated tests. Verify edge cases from step 1.
 
 ---
 

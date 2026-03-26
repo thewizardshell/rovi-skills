@@ -63,6 +63,7 @@ go.mod
 All DI happens in `main.go`. Build the chain: repo → service → handler. Register routes.
 
 ```go
+// Pattern: all instantiation in main, chain repo -> service -> handler
 func main() {
     cfg := config.Load()
 
@@ -72,19 +73,13 @@ func main() {
     }
     defer db.Close()
 
-    tokenManager := auth.NewTokenManager(cfg.JWTSecret, cfg.JWTExpiryHrs)
-
-    // DI chain: repo -> service -> handler
-    userRepo := repository.NewUserRepository(db)
-    userService := services.NewUserService(userRepo)
-    userHandler := handler.NewUserHandler(userService, tokenManager)
-
-    taskRepo := repository.NewTaskRepository(db)
-    taskService := services.NewTaskService(taskRepo)
-    taskHandler := handler.NewTaskHandler(taskService)
+    // DI chain per entity
+    entityRepo := repository.NewEntityRepository(db)
+    entityService := services.NewEntityService(entityRepo)
+    entityHandler := handler.NewEntityHandler(entityService)
 
     router := gin.Default()
-    // ... register routes
+    // ... register routes with entityHandler
     router.Run(":" + cfg.Port)
 }
 ```
@@ -96,41 +91,39 @@ func main() {
 Struct with service dependency, constructor function `New*Handler`.
 
 ```go
-type TaskHandler struct {
-    service *services.TaskService
+// Pattern: struct holds service, New* constructor, methods are HTTP handlers
+type EntityHandler struct {
+    service *services.EntityService
 }
 
-func NewTaskHandler(service *services.TaskService) *TaskHandler {
-    return &TaskHandler{service: service}
+func NewEntityHandler(service *services.EntityService) *EntityHandler {
+    return &EntityHandler{service: service}
 }
 
-func (h *TaskHandler) GetTask(c *gin.Context) {
+func (h *EntityHandler) GetById(c *gin.Context) {
     id, err := strconv.ParseInt(c.Param("id"), 10, 64)
     if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid task id"})
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
         return
     }
 
-    task, err := h.service.GetTaskById(c.Request.Context(), id)
+    entity, err := h.service.GetById(c.Request.Context(), id)
     if err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "task not found"})
+        c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
         return
     }
 
-    c.JSON(http.StatusOK, task)
+    c.JSON(http.StatusOK, entity)
 }
 ```
 
 Request types defined in the same handler file:
 
 ```go
-type CreateTaskRequest struct {
-    Title       string `json:"title" binding:"required"`
+// Pattern: request structs with json tags + binding validation
+type CreateEntityRequest struct {
+    Name        string `json:"name" binding:"required"`
     Description string `json:"description"`
-    Status      string `json:"status"`
-    Priority    string `json:"priority"`
-    UserID      int64  `json:"user_id" binding:"required"`
-    DueDate     string `json:"due_date"`
 }
 ```
 
@@ -141,16 +134,17 @@ type CreateTaskRequest struct {
 Thin layer that orchestrates repository calls. Receives repo via constructor.
 
 ```go
-type TaskService struct {
-    repo repository.TaskRepository
+// Pattern: struct holds repo interface, New* constructor
+type EntityService struct {
+    repo repository.EntityRepository
 }
 
-func NewTaskService(repo repository.TaskRepository) *TaskService {
-    return &TaskService{repo: repo}
+func NewEntityService(repo repository.EntityRepository) *EntityService {
+    return &EntityService{repo: repo}
 }
 
-func (s *TaskService) GetTaskById(ctx context.Context, id int64) (*domain.Task, error) {
-    return s.repo.GetTaskById(ctx, id)
+func (s *EntityService) GetById(ctx context.Context, id int64) (*domain.Entity, error) {
+    return s.repo.GetById(ctx, id)
 }
 ```
 
@@ -161,43 +155,26 @@ func (s *TaskService) GetTaskById(ctx context.Context, id int64) (*domain.Task, 
 **Interface defined in the same file as the implementation.** Exported interface, unexported struct.
 
 ```go
-// Interface
-type TaskRepository interface {
-    GetTaskById(ctx context.Context, id int64) (*domain.Task, error)
-    ListTaskByUser(ctx context.Context, id int64) ([]domain.Task, error)
-    CreateTask(ctx context.Context, ...) (*domain.Task, error)
-    UpdateTask(ctx context.Context, ...) (*domain.Task, error)
-    DeleteTask(ctx context.Context, id int64) error
+// Pattern: exported interface, unexported struct, New* returns interface
+type EntityRepository interface {
+    GetById(ctx context.Context, id int64) (*domain.Entity, error)
+    List(ctx context.Context) ([]domain.Entity, error)
+    Create(ctx context.Context, ...) (*domain.Entity, error)
+    Delete(ctx context.Context, id int64) error
 }
 
-// Implementation (unexported)
-type taskRepository struct {
+type entityRepository struct {
     queries *database.Queries
 }
 
-func NewTaskRepository(db *sql.DB) TaskRepository {
-    return &taskRepository{
+func NewEntityRepository(db *sql.DB) EntityRepository {
+    return &entityRepository{
         queries: database.New(db),
     }
 }
 ```
 
-The repo converts sqlc generated models to domain structs manually:
-
-```go
-func (r *taskRepository) GetTaskById(ctx context.Context, id int64) (*domain.Task, error) {
-    dbTask, err := r.queries.GetTaskByID(ctx, id)
-    if err != nil {
-        return nil, err
-    }
-    return &domain.Task{
-        Id:          dbTask.ID,
-        Title:       dbTask.Title,
-        Description: dbTask.Description.String,
-        Status:      dbTask.Status.String,
-    }, nil
-}
-```
+The repo converts sqlc generated models to domain structs manually.
 
 ---
 
@@ -206,15 +183,12 @@ func (r *taskRepository) GetTaskById(ctx context.Context, id int64) (*domain.Tas
 Pure structs with JSON tags. No methods, no DB dependencies.
 
 ```go
-type Task struct {
+// Pattern: plain struct, json tags, no DB types
+type Entity struct {
     Id          int64     `json:"id"`
-    Title       string    `json:"title"`
+    Name        string    `json:"name"`
     Description string    `json:"description"`
-    Status      string    `json:"status"`
-    Priority    string    `json:"priority"`
-    Userid      int64     `json:"userId"`
-    Duedate     time.Time `json:"dueDate"`
-    CompletedAt time.Time `json:"completedAt"`
+    CreatedAt   time.Time `json:"createdAt"`
     UpdatedAt   time.Time `json:"updatedAt"`
 }
 ```
@@ -240,30 +214,19 @@ var (
 SQL queries in `.sql` files, sqlc generates Go code. Config in `sqlc.yaml`.
 
 ```sql
--- queries/tasks.sql
--- name: GetTaskByID :one
-SELECT * FROM tasks WHERE id = $1;
+-- Pattern: named queries, sqlc generates typed Go functions
+-- name: GetEntityByID :one
+SELECT * FROM entities WHERE id = $1;
 
--- name: ListTasksByUser :many
-SELECT * FROM tasks WHERE user_id = $1;
+-- name: ListEntities :many
+SELECT * FROM entities ORDER BY created_at DESC;
 ```
 
 ---
 
 ## Swagger
 
-Use swag comments on handlers for auto-generated docs:
-
-```go
-// GetTask godoc
-// @Summary Obtener tarea por ID
-// @Tags tasks
-// @Security Bearer
-// @Produce json
-// @Param id path int true "Task ID"
-// @Success 200 {object} domain.Task
-// @Router /tasks/{id} [get]
-```
+Use swag comments on handlers for auto-generated docs.
 
 ---
 

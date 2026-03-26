@@ -45,19 +45,20 @@ src/
 NestJS handles DI via decorators — no manual instantiation needed. But the same idea: you see the dependencies right there.
 
 ```typescript
-@Controller("owners")
-export class OwnerController {
-  constructor(private readonly ownerService: OwnerService) {}
+// Pattern: @Controller with injected service, typed DTOs
+@Controller("entities")
+export class EntityController {
+  constructor(private readonly entityService: EntityService) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
   async findAll() {
-    return this.ownerService.findAll();
+    return this.entityService.findAll();
   }
 
   @Post()
-  async create(@Body() data: CreateOwnerDto) {
-    return this.ownerService.create(data);
+  async create(@Body() data: CreateEntityDto) {
+    return this.entityService.create(data);
   }
 }
 ```
@@ -67,23 +68,21 @@ export class OwnerController {
 ## Service
 
 ```typescript
+// Pattern: @Injectable with @Inject for interface token
 @Injectable()
-export class OwnerService {
+export class EntityService {
   constructor(
-    @Inject("IOwnerRepository")
-    private readonly ownerRepository: IOwnerRepository
+    @Inject("IEntityRepository")
+    private readonly entityRepository: IEntityRepository
   ) {}
 
-  async findAll(): Promise<Owner[]> {
-    return this.ownerRepository.findAll();
+  async findAll(): Promise<Entity[]> {
+    return this.entityRepository.findAll();
   }
 
-  async create(data: CreateOwnerDto): Promise<Owner> {
-    const existing = await this.ownerRepository.findByEmail(data.email);
-    if (existing) {
-      throw new ConflictException("Owner ya existe con ese email");
-    }
-    return this.ownerRepository.create(data);
+  async create(data: CreateEntityDto): Promise<Entity> {
+    // Business validation lives here
+    return this.entityRepository.create(data);
   }
 }
 ```
@@ -93,18 +92,19 @@ export class OwnerService {
 ## Module (DI wiring)
 
 ```typescript
+// Pattern: wire interface token to concrete class
 @Module({
-  controllers: [OwnerController],
+  controllers: [EntityController],
   providers: [
-    OwnerService,
+    EntityService,
     {
-      provide: "IOwnerRepository",
-      useClass: OwnerRepositoryPrisma,
+      provide: "IEntityRepository",
+      useClass: EntityRepositoryPrisma,
     },
   ],
-  exports: [OwnerService],
+  exports: [EntityService],
 })
-export class OwnerModule {}
+export class EntityModule {}
 ```
 
 ---
@@ -114,22 +114,20 @@ export class OwnerModule {}
 Same pattern: interface in `types/`, implementation in `repository/`.
 
 ```typescript
-// types/owner.interface.ts
-export interface IOwnerRepository {
-  findAll(): Promise<Owner[]>;
-  findById(id: number): Promise<Owner>;
-  findByEmail(email: string): Promise<Owner | null>;
-  create(data: CreateOwnerDto): Promise<Owner>;
+// Pattern: interface defines contract
+// types/entity.interface.ts
+export interface IEntityRepository {
+  findAll(): Promise<Entity[]>;
+  findById(id: number): Promise<Entity>;
+  create(data: CreateEntityDto): Promise<Entity>;
 }
 
-// repository/owner.repository.ts
+// Pattern: @Injectable class implements interface
+// repository/entity.repository.ts
 @Injectable()
-export class OwnerRepositoryPrisma implements IOwnerRepository {
+export class EntityRepositoryPrisma implements IEntityRepository {
   constructor(private prisma: PrismaService) {}
-
-  async findAll(): Promise<Owner[]> {
-    return this.prisma.owner.findMany();
-  }
+  // Implementation here
 }
 ```
 
@@ -139,21 +137,7 @@ export class OwnerRepositoryPrisma implements IOwnerRepository {
 
 **Swagger first.** Every NestJS backend must expose an OpenAPI spec. The frontend depends on it.
 
-```typescript
-// main.ts
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
-
-const config = new DocumentBuilder()
-  .setTitle("API")
-  .setVersion("1.0")
-  .addBearerAuth()
-  .build();
-
-const document = SwaggerModule.createDocument(app, config);
-SwaggerModule.setup("docs", app, document);
-```
-
-Use `@ApiTags`, `@ApiOperation`, `@ApiResponse` decorators on controllers. The spec is the contract between backend and frontend.
+Use `@nestjs/swagger` with `DocumentBuilder`. Use `@ApiTags`, `@ApiOperation`, `@ApiResponse` decorators on controllers. The spec is the contract between backend and frontend.
 
 ---
 

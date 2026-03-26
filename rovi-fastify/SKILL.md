@@ -41,33 +41,23 @@ src/
 **Instantiate dependencies directly in the controller file.** No separate DI container file. The controller is where you see what depends on what.
 
 ```typescript
+// Pattern: import repo + service, instantiate inline, export controller function
 import { FastifyInstance } from "fastify";
-import { OwnerService } from "../service/owner.service";
-import { OwnerRepository } from "../repository/owner.repository";
-import { jwtAuth } from "../../../auth/middleware/jwt.middleware";
+import { EntityService } from "../service/entity.service";
+import { EntityRepository } from "../repository/entity.repository";
 
-const ownerRepository = new OwnerRepository();
-const ownerService = new OwnerService(ownerRepository);
+const entityRepository = new EntityRepository();
+const entityService = new EntityService(entityRepository);
 
-export async function ownerController(fastify: FastifyInstance) {
-  fastify.get("/", { preHandler: [jwtAuth] }, async (request, reply) => {
-    try {
-      const owners = await ownerService.findAll();
-      return reply.status(200).send({ data: owners });
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new DatabaseOperationException("No se pudo obtener los owners", error);
-    }
+export async function entityController(fastify: FastifyInstance) {
+  fastify.get("/", async (request, reply) => {
+    const items = await entityService.findAll();
+    return reply.status(200).send({ data: items });
   });
 
-  fastify.post("/create", async (request, reply) => {
-    try {
-      const result = await ownerService.create(request.body as CreateOwnerData);
-      return reply.status(201).send({ message: "Owner creado", data: result });
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new DatabaseOperationException("No se pudo crear el owner", error);
-    }
+  fastify.post("/", async (request, reply) => {
+    const result = await entityService.create(request.body as CreateEntityData);
+    return reply.status(201).send({ data: result });
   });
 }
 ```
@@ -79,23 +69,19 @@ export async function ownerController(fastify: FastifyInstance) {
 Services receive dependencies via **constructor injection**. No classes passed as method parameters.
 
 ```typescript
-import { IOwnerRepository } from "../types/owner.interface";
-
-export class OwnerService {
+// Pattern: constructor receives interface, methods orchestrate business logic
+export class EntityService {
   constructor(
-    private readonly ownerRepository: IOwnerRepository
+    private readonly entityRepository: IEntityRepository
   ) {}
 
-  async findAll(): Promise<Owner[]> {
-    return this.ownerRepository.findAll();
+  async findAll(): Promise<Entity[]> {
+    return this.entityRepository.findAll();
   }
 
-  async create(data: CreateOwnerData): Promise<Owner> {
-    const existing = await this.ownerRepository.findByEmail(data.email);
-    if (existing) {
-      throw new DuplicateError("Owner", "email");
-    }
-    return this.ownerRepository.create(data);
+  async create(data: CreateEntityData): Promise<Entity> {
+    // Business validation lives here
+    return this.entityRepository.create(data);
   }
 }
 ```
@@ -107,26 +93,18 @@ export class OwnerService {
 Interface in `types/`, implementation in `repository/`.
 
 ```typescript
-// types/owner.interface.ts
-export interface IOwnerRepository {
-  findAll(): Promise<Owner[]>;
-  findById(id: number): Promise<Owner>;
-  findByEmail(email: string): Promise<Owner | null>;
-  create(data: CreateOwnerData): Promise<Owner>;
-  delete(id: number): Promise<Owner>;
+// Pattern: interface defines contract, class implements it
+// types/entity.interface.ts
+export interface IEntityRepository {
+  findAll(): Promise<Entity[]>;
+  findById(id: number): Promise<Entity>;
+  create(data: CreateEntityData): Promise<Entity>;
+  delete(id: number): Promise<Entity>;
 }
 
-// repository/owner.repository.ts
-export class OwnerRepository implements IOwnerRepository {
-  constructor(private prisma: PrismaClient) {}
-
-  async findAll(): Promise<Owner[]> {
-    return this.prisma.owner.findMany();
-  }
-
-  async findById(id: number): Promise<Owner> {
-    return this.prisma.owner.findUnique({ where: { id } });
-  }
+// repository/entity.repository.ts
+export class EntityRepository implements IEntityRepository {
+  // Implementation depends on the DB (Prisma, Drizzle, raw SQL, etc.)
 }
 ```
 
@@ -135,12 +113,12 @@ export class OwnerRepository implements IOwnerRepository {
 ## Route Registration
 
 ```typescript
-// routes/owner.routes.ts
+// Pattern: register controller with prefix
 import { FastifyInstance } from "fastify";
-import { ownerController } from "../controller/owner.controller";
+import { entityController } from "../controller/entity.controller";
 
-export async function ownerRoutes(fastify: FastifyInstance) {
-  fastify.register(ownerController, { prefix: "/owners" });
+export async function entityRoutes(fastify: FastifyInstance) {
+  fastify.register(entityController, { prefix: "/entities" });
 }
 ```
 
@@ -150,27 +128,7 @@ export async function ownerRoutes(fastify: FastifyInstance) {
 
 **Swagger first.** Every Fastify backend must expose an OpenAPI spec. The frontend depends on it to auto-generate its entire API layer with Orval.
 
-Use `@fastify/swagger` + `@fastify/swagger-ui`:
-
-```typescript
-import fastifySwagger from "@fastify/swagger";
-import fastifySwaggerUi from "@fastify/swagger-ui";
-
-await fastify.register(fastifySwagger, {
-  openapi: {
-    info: { title: "API", version: "1.0.0" },
-    components: {
-      securitySchemes: {
-        Bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
-      },
-    },
-  },
-});
-
-await fastify.register(fastifySwaggerUi, { routePrefix: "/docs" });
-```
-
-Document every route with schemas. The OpenAPI spec is the contract between backend and frontend.
+Use `@fastify/swagger` + `@fastify/swagger-ui`. Document every route with schemas. The OpenAPI spec is the contract between backend and frontend.
 
 ---
 
