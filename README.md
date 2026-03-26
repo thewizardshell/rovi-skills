@@ -12,6 +12,12 @@ Modular coding style and architecture skills for Claude Code.
 | `rovi-testing` | Auto-invoked | Testing philosophy: manual-first, unit/integration, mock interfaces |
 | `rovi-design` | Auto-invoked | UI/UX design system: solid colors, abstract shapes, framer-motion, CSS variables, smooth scroll |
 | `rovi-tooling` | Auto-invoked | Linters (Biome > ESLint), package managers (bun/pnpm), .npmrc ignore-scripts, deps |
+| `rovi-fastify` | Auto-invoked | Fastify: entities/ structure, inline DI in controllers, constructor injection |
+| `rovi-react` | Auto-invoked | React: TanStack Query + Router, global store, feature-based structure |
+| `rovi-nextjs` | Auto-invoked | Next.js: App Router, Server Components, TanStack, store global |
+| `rovi-nestjs` | Auto-invoked | NestJS: same philosophy with decorators and built-in DI |
+| `rovi-fastapi` | Auto-invoked | FastAPI: entities/ structure, Depends() DI, ABC interfaces, Pydantic |
+| `rovi-go` | Auto-invoked | Go: cmd/internal layout, Gin, sqlc, handler/service/repository, New* constructors |
 | `rovi-review` | User-invoked (`/rovi-review`) | Code review against rovi standards with checklist |
 
 ## Stack

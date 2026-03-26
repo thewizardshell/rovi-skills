@@ -30,6 +30,12 @@ Repository, Service, UseCase/Interactor, Ports & Adapters, Factory, Strategy, Ob
 
 ---
 
+## Project Separation
+
+**When the user asks for both backend and frontend, always ask first:** monorepo or repos separados? Never assume monorepo by default. Present the options and wait for confirmation before creating any folder.
+
+---
+
 ## Folder Structure
 
 ### Principles

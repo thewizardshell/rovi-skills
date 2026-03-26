@@ -37,9 +37,6 @@ class UserService { }
 /** Crea un usuario nuevo y lo persiste en la base de datos */
 async execute(data: IUser): Promise<IUser> { }
 
-/** Reconstruye la entidad desde los datos de la base de datos */
-static fromPersistence(data: IUser): User { }
-
 /** Busca un usuario por su ID */
 findById(id: number): Promise<IUser>;
 ```

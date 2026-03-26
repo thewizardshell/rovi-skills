@@ -18,10 +18,6 @@ export class User implements IUser {
     this.password = password;
   }
 
-  static fromPersistence(data: IUser): User {
-    return new User(data.id, data.role, data.email, data.createdTime, data.password);
-  }
-
   /** Valida formato antes de asignar — la regla vive aqui y no en infra */
   setEmail(newEmail: string): string {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
