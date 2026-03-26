@@ -243,3 +243,4 @@ Use swag comments on handlers for auto-generated docs.
 - **All DI wiring in `main.go`.** One place to see the full dependency graph.
 - **Swagger comments on every handler.** Spanish descriptions, English field names.
 - **Makefile** for common commands (build, run, migrate, sqlc generate, swagger).
+- **Ask monorepo vs separate repos.** When the user asks for both frontend and backend, always ask first. Never assume.

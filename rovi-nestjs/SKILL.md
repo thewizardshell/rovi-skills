@@ -150,3 +150,4 @@ Use `@nestjs/swagger` with `DocumentBuilder`. Use `@ApiTags`, `@ApiOperation`, `
 - **DTOs for validation.** Use `class-validator` + `class-transformer` with DTOs.
 - **Guards, not middleware** for auth in NestJS.
 - **No `fromPersistence` pattern.** Do not add static reconstruction methods unless explicitly requested.
+- **Ask monorepo vs separate repos.** When the user asks for both frontend and backend, always ask first. Never assume.

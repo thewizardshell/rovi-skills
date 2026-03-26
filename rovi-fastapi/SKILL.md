@@ -123,3 +123,4 @@ Keep Pydantic `response_model` on every route — it feeds the OpenAPI spec dire
 - **ABC for interfaces.** Python equivalent of TypeScript interfaces.
 - **Pydantic for schemas/DTOs.** Validation at the API boundary.
 - **No `fromPersistence` pattern equivalent.** No static factory methods unless explicitly requested.
+- **Ask monorepo vs separate repos.** When the user asks for both frontend and backend, always ask first. Never assume.

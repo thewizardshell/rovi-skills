@@ -92,3 +92,4 @@ Same as React — one store per entity with Zustand/Jotai. Wrap provider at layo
 - **TanStack Query for client fetching.** Server Components use direct fetch/server actions.
 - **Global store for client state.** Same pattern as rovi-react.
 - **No `fromPersistence` pattern.** Do not add static reconstruction methods unless explicitly requested.
+- **Ask monorepo vs separate repos.** When the user asks for both frontend and backend, always ask first. Never assume.

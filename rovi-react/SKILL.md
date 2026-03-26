@@ -322,3 +322,4 @@ export function EntityCard({ entity, onDelete }: EntityCardProps) {
 - **Function components only.** No class components.
 - **Custom hooks for logic.** Components are for rendering, hooks are for logic.
 - **No `fromPersistence` pattern.** Do not add static reconstruction methods unless explicitly requested.
+- **Ask monorepo vs separate repos.** When the user asks for both frontend and backend, always ask first. Never assume.

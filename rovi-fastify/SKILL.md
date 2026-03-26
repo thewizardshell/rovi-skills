@@ -140,3 +140,4 @@ Use `@fastify/swagger` + `@fastify/swagger-ui`. Document every route with schema
 - **Constructor injection in services.** Dependencies via constructor, never as method params.
 - **Interface + implementation separated** in `types/` (interface) and `repository/` or `service/` (class).
 - **No `fromPersistence` pattern.** Do not add static reconstruction methods to entities unless explicitly requested.
+- **Ask monorepo vs separate repos.** When the user asks for both frontend and backend, always ask first. Never assume.
