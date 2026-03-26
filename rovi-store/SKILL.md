@@ -1,6 +1,6 @@
 ---
 name: rovi-store
-description: "State management patterns: one store per entity, loading/error state, try-catch with finally, optimistic updates. Auto-loads when creating or modifying stores with Jotai, Redux, Zustand, or Pinia."
+description: "State management patterns: one store per entity, loading/error state, try-catch with finally, optimistic updates. Auto-loads when working on frontend, creating components, building UI, or modifying stores with Jotai, Redux, Zustand, or Pinia. Every frontend feature must have its own store."
 ---
 
 # ROVI — State Management

@@ -10,6 +10,7 @@ Modular coding style and architecture skills for Claude Code.
 | `rovi-architecture` | Auto-invoked | Clean Architecture, layered separation, folder structure, patterns |
 | `rovi-store` | Auto-invoked | State management: one store per entity, loading/error state, optimistic updates |
 | `rovi-testing` | Auto-invoked | Testing philosophy: manual-first, unit/integration, mock interfaces |
+| `rovi-design` | Auto-invoked | UI/UX design system: solid colors, abstract shapes, framer-motion, CSS variables, smooth scroll |
 | `rovi-review` | User-invoked (`/rovi-review`) | Code review against rovi standards with checklist |
 
 ## Stack
@@ -23,7 +24,7 @@ TypeScript, JavaScript, Python, Go | React, Next.js, Vue | NestJS, Fastify, Flas
 ```bash
 # All skills
 mkdir -p ~/.claude/skills
-cp -r rovi rovi-architecture rovi-store rovi-testing rovi-review ~/.claude/skills/
+cp -r rovi rovi-architecture rovi-store rovi-testing rovi-design rovi-review ~/.claude/skills/
 
 # Agent (optional — requires Context7 MCP)
 mkdir -p ~/.claude/agents
@@ -35,7 +36,7 @@ cp .claude/agents/docs-lookup.md ~/.claude/agents/
 ```bash
 # All skills
 mkdir -p .claude/skills
-cp -r rovi rovi-architecture rovi-store rovi-testing rovi-review .claude/skills/
+cp -r rovi rovi-architecture rovi-store rovi-testing rovi-design rovi-review .claude/skills/
 
 # Agent (optional)
 mkdir -p .claude/agents
@@ -65,6 +66,8 @@ rovi-skills/
 │   ├── SKILL.md
 │   └── references/
 │       └── testing-examples.md
+├── rovi-design/                    # UI/UX design system
+│   └── SKILL.md
 ├── rovi-review/                    # Code review (user-invoked)
 │   └── SKILL.md
 ├── .claude/
