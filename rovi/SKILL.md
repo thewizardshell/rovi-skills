@@ -29,10 +29,12 @@ This skill defines a complete development philosophy: how to think before coding
 Before writing any code, follow this sequence:
 
 1. **Understand the problem.** What is needed? Edge cases? Constraints?
-2. **Design the contracts.** Define interfaces first. Establish input/output types. Identify possible errors.
-3. **Define the structure.** Which layer does each piece live in? What dependencies are needed? How do parts connect?
-4. **Implement.** Start with domain (entities, interfaces), then use cases, then infrastructure and presentation.
-5. **Test.** Manual testing first (Postman or browser). Then write automated tests. Verify edge cases from step 1.
+2. **Verify docs-lookup is available.** Before starting any implementation, check that the `docs-lookup` agent and Context7 MCP are configured. If Context7 tools (`mcp__claude_ai_Context7__resolve-library-id`, `mcp__claude_ai_Context7__query-docs`) are not available or not accepted in permissions, **stop and tell the user**. Explain that this skill requires Context7 MCP to be installed and its tools to be allowed in permissions. Ask the user if they want to proceed without it using WebSearch as fallback instead. Do not silently skip this step.
+3. **Look up while working — continuously.** Every time you are about to use a library, framework, or API — spawn a `docs-lookup` agent **in background**. This is not a one-time step. It happens throughout the entire session: at the start for the initial stack, and again every time you move to a different part of the project that involves a different library or tool. Do not wait for results — keep working and incorporate the info as it arrives. Launch multiple background lookups in parallel if needed. The agent feeds you context while you code, like a coworker looking things up for you.
+4. **Design the contracts.** Define interfaces first. Establish input/output types. Identify possible errors.
+5. **Confirm structural decisions.** Before creating folders, naming anything, or choosing how to organize the project — ask. Every framework and context has its own conventions. Do not assume folder names, entry point patterns, or project layout from previous experience or from the examples in this skill. Present a proposal and wait for confirmation.
+6. **Implement.** Start with domain (entities, interfaces), then use cases, then infrastructure and presentation.
+7. **Test.** Manual testing first (Postman or browser). Then write automated tests. Verify edge cases from step 1.
 
 ---
 
@@ -40,11 +42,13 @@ Before writing any code, follow this sequence:
 
 ### Clean Architecture (Layered)
 
+These are dependency layers, not folder names. All layers coexist inside each entity's folder.
+
 ```
-domain/          → Entities, interfaces, business types. Zero external dependencies.
-application/     → Use cases. Orchestrate the domain. Depend only on interfaces.
-infrastructure/  → Concrete implementations: repositories, external APIs, DB.
-presentation/    → Controllers, routes, UI. The outermost layer.
+domain layer          → Entities, interfaces, business types. Zero external dependencies.
+application layer     → Use cases. Orchestrate the domain. Depend only on interfaces.
+infrastructure layer  → Concrete implementations: repositories, external APIs, DB.
+presentation layer    → Controllers, routes, UI. The outermost layer.
 ```
 
 ### Core Principles
@@ -61,7 +65,7 @@ Repository, Service, UseCase/Interactor, Ports & Adapters, Factory, Strategy, Ob
 
 ### Layer Implementation
 
-Read `references/layer-examples.md` for full code examples of each layer: domain entities with self-validation and `fromPersistence`, repository interfaces, use cases with `execute`, concrete repositories, controllers as pure delegation, middleware as single-purpose functions, auxiliary services (JWT, encryption), and the `common/` folder pattern.
+Read `references/layer-examples.md` for code examples of each layer.
 
 ---
 
@@ -69,57 +73,58 @@ Read `references/layer-examples.md` for full code examples of each layer: domain
 
 ### Principles
 
-- **Feature/module-based.** Each feature is an autonomous module. Never mix code from one module into another.
-- **Global vs local.** If something is used by only one module, it lives inside that module. If shared, it goes up to the global level.
-- **Core/Common is infrastructure.** DB config, server setup, cloud clients — separated from business modules.
+- **Feature-based organization.** Each feature is autonomous. Never mix code from one feature into another.
+- **Global vs local.** If something is used by only one feature, it lives inside that feature. If shared, it goes up to the global level.
+- **Shared infrastructure separated.** DB config, server setup, cloud clients — separated from business features.
 - **One store per entity** (frontend). Never a mega-store.
 - **File naming:** `camelCase` for stores and utilities, `PascalCase` for components and views.
 
-### Frontend
+### Important
+
+The examples below are **references**, not rigid templates. Folder names, nesting depth, and grouping depend on the framework and the project. Always confirm the structure before creating it. What matters is the layered separation principle, not the specific names.
+
+### Frontend (reference)
 
 ```
 src/
   assets/
-  components/          → Global reusable components
+  components/               → Global reusable components
   core/
     layout/
-    store/             → Base store configuration
-  features/
+    store/                  → Base store configuration
+  [feature-group]/
     [FeatureName]/
-      components/      → Feature-specific components
-      store/           → Feature-specific stores
-      views/           → Feature pages
+      components/           → Feature-specific components
+      store/                → Feature-specific stores
+      views/                → Feature pages
   utils/
 ```
 
-### Backend
+### Backend (reference)
+
+Everything related to an entity lives inside that entity's folder. You work on one entity, you stay in one place.
 
 ```
 src/
-  common/
+  [shared-config]/
     db/
     server/
   modules/
-    [ModuleName]/
-      domain/
-        entities/
-        interfaces/
-        types/
-        factory/
-      application/
-        use-cases/
-        dto/
-      infrastructure/
-        repositories/
-        services/
-      presentation/
-        controllers/
-        middleware/
-        docs/            → API documentation (Swagger/OpenAPI) separate from controllers
-        exceptions/      → HTTP-specific exceptions for this layer
+    [EntityName]/
+      entities/
+      interfaces/
+      types/
+      use-cases/
+      dto/
+      repositories/
+      services/
+      controllers/
+      middleware/
   utils/
     errors/
 ```
+
+Names in `[brackets]` are placeholders — they change per project and framework. The key rule: everything for one entity is colocated, no jumping between folders to find related code.
 
 ---
 
@@ -181,11 +186,12 @@ Use block comment separators inside files with multiple logical sections:
 ## Documentation & Comments
 
 - **No emojis.** Ever. Comments are technical documentation.
-- **JSDoc/TSDoc on every public function and class.** No exceptions.
-- **Explain the "why", not the "what".** Code says what it does; comments explain why that decision was made.
-- **Long comments are fine.** If a design decision needs 5 lines, write 5 lines.
+- **JSDoc/TSDoc on public functions and classes** that have non-obvious behavior or design decisions behind them.
+- **Only comment when the code does not speak for itself.** If a method name and its signature already make the behavior obvious, a comment adds noise. Reserve comments for decisions, trade-offs, constraints, or gotchas that someone reading the code would not immediately understand.
+- **Explain the "why", never narrate the "what".** Bad: "Crea un usuario nuevo y lo persiste". Good: "Se hashea antes de persistir porque el repositorio no maneja encriptacion". If there is no "why" worth explaining, do not write the comment.
+- **Long comments are fine** when a design decision genuinely needs context.
 - **Use `@example`** when the API is not obvious.
-- Comments are written in **Spanish** (unless English is explicitly required).
+- Comments in **Spanish** by default, naming in **English**.
 
 Read `references/documentation-examples.md` for JSDoc patterns.
 
@@ -281,7 +287,7 @@ Read `references/testing-examples.md` for test patterns.
 ### Always
 
 - Define interfaces before implementing.
-- Document with detailed JSDoc/TSDoc.
+- Document with JSDoc/TSDoc when there is a non-obvious "why" behind the code.
 - Type strictly. `strict: true`, no `any`, explicit types.
 - Structure in layers. Domain → Application → Infrastructure → Presentation.
 - Centralize errors in a dedicated module with clear types.

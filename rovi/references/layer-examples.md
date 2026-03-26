@@ -2,8 +2,6 @@
 
 ## Domain Entity
 
-Entities have their own logic. They validate data internally, expose getters/setters with business rules, and have static methods for rehydration from persistence.
-
 ```typescript
 export class User implements IUser {
   id: number;
@@ -20,19 +18,11 @@ export class User implements IUser {
     this.password = password;
   }
 
-  /**
-   * Reconstruye la entidad desde los datos que vienen de la base de datos.
-   * Separa la lógica de creación de la lógica de rehidratación.
-   */
   static fromPersistence(data: IUser): User {
     return new User(data.id, data.role, data.email, data.createdTime, data.password);
   }
 
-  /**
-   * Cambia el email validando el formato antes de asignarlo.
-   * La validación vive en la entidad porque es una regla de negocio,
-   * no de infraestructura.
-   */
+  /** Valida formato antes de asignar — la regla vive aqui y no en infra */
   setEmail(newEmail: string): string {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail)) {
@@ -46,28 +36,18 @@ export class User implements IUser {
 
 ## Repository Interface
 
-Defines the complete contract of operations on an entity. Each method with a short comment. The use case depends on the interface, never on the implementation.
-
 ```typescript
 export default interface IUserRepository {
-  // Create a new user
   create(user: IUser): Promise<IUser>;
-  // Find user by ID
   findById(id: number): Promise<IUser>;
-  // Find user by email
   findByEmail(email: string): Promise<IUser | null>;
-  // Get all users
   findAll(): Promise<IUser[]>;
-  // Delete user
   delete(id: number): Promise<IUser>;
-  // Update user
   update(id: number, data: Partial<IUser>): Promise<IUser>;
 }
 ```
 
 ## Use Case
-
-One use case = one system action. Receives dependencies via constructor (injection), has an `execute` method as entry point, orchestrates logic without knowing concrete implementations.
 
 ```typescript
 @Injectable()
@@ -77,10 +57,6 @@ export class CreateUser {
     private readonly encryptService: EncryptService,
   ) {}
 
-  /**
-   * Crea un usuario nuevo. Verifica duplicados, valida datos,
-   * encripta la contraseña y persiste a través del repositorio.
-   */
   async execute(data: IUser): Promise<IUser> {
     try {
       const existingUser = await this.userRepository.findByEmail(data.email);
@@ -102,8 +78,6 @@ export class CreateUser {
 ```
 
 ## Concrete Repository
-
-The implementation does data operations only. Zero business logic. Each method is direct — receives parameters, executes the query, returns the result.
 
 ```typescript
 @Injectable()
@@ -141,11 +115,9 @@ export class UserRepositoryPrisma implements IUserRepository {
 
 ## Factory
 
-Encapsulates entity creation when there are variants (roles, types, different initial states). The use case does not instantiate the entity directly — it uses the factory.
+Encapsulates entity creation when there are variants (roles, types, different initial states).
 
 ## Controller / Routes
-
-The controller is pure delegation. Receives the request, calls the corresponding use case or service, and returns the response. No business logic. If there is an error, it catches it and transforms it into an appropriate HTTP response.
 
 ```typescript
 async createUser(request, reply) {
@@ -159,14 +131,7 @@ async createUser(request, reply) {
 }
 ```
 
-Controller rules:
-- Each endpoint delegates to the use case. The controller does not validate business, does not query the DB, does not encrypt anything.
-- API documentation separate. Swagger/OpenAPI config lives in separate files, not polluting the controller.
-- Layer-specific exceptions. The controller uses HTTP-specific exceptions (`UserNotFoundException`, `InvalidCredentialsException`), not generic errors.
-
 ## Middleware
-
-Middlewares are simple functions that do one thing. Authentication, permission validation, logging — each is an independent function hooked to the route.
 
 ```typescript
 export async function jwtAuth(request, reply) {
@@ -187,8 +152,6 @@ export async function jwtAuth(request, reply) {
 ```
 
 ## Auxiliary Services
-
-Services like JWT, encryption, mail sending, etc. are classes with single responsibility. They receive configuration via constructor and are injected where needed. Framework-independent — portable.
 
 ```typescript
 export class JwtService {
@@ -213,6 +176,6 @@ export class JwtService {
 }
 ```
 
-## Common Folder
+## Shared Configuration
 
-Shared configuration that does not belong to any module: database connection, server configuration, cloud service clients, environment variables. Everything the application needs to boot that is not business logic.
+Database connection, server setup, cloud clients, environment variables. Everything the application needs to boot that is not business logic. The folder name and location depend on the framework.
