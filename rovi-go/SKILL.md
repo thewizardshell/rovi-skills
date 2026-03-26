@@ -269,6 +269,7 @@ Use swag comments on handlers for auto-generated docs:
 
 ## Rules
 
+- **Swagger first.** Always expose OpenAPI spec with swag comments. The frontend consumes it with Orval.
 - **`cmd/` + `internal/`** standard layout. No `pkg/` unless publishing a library.
 - **Constructor functions `New*`** for all structs with dependencies.
 - **Interface in the same file** as the implementation (Go convention).

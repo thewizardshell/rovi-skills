@@ -125,8 +125,17 @@ class OwnerRepository(IOwnerRepository):
 
 ---
 
+## Swagger / OpenAPI
+
+**Swagger first.** FastAPI generates OpenAPI automatically from Pydantic models and route decorators. Just make sure `/docs` is accessible and schemas are well-typed. The frontend depends on this spec to auto-generate its API layer with Orval.
+
+Keep Pydantic `response_model` on every route — it feeds the OpenAPI spec directly.
+
+---
+
 ## Rules
 
+- **Swagger first.** FastAPI auto-generates it. Ensure all routes have `response_model` and typed schemas.
 - **`entities/` folder structure.** Same as Fastify — each entity is self-contained.
 - **`Depends()` for DI wiring** in the controller/router. Factory function that builds the chain.
 - **Constructor injection in services.** Via `__init__`, same philosophy.

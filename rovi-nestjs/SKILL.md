@@ -135,8 +135,31 @@ export class OwnerRepositoryPrisma implements IOwnerRepository {
 
 ---
 
+## Swagger / OpenAPI
+
+**Swagger first.** Every NestJS backend must expose an OpenAPI spec. The frontend depends on it.
+
+```typescript
+// main.ts
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+
+const config = new DocumentBuilder()
+  .setTitle("API")
+  .setVersion("1.0")
+  .addBearerAuth()
+  .build();
+
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup("docs", app, document);
+```
+
+Use `@ApiTags`, `@ApiOperation`, `@ApiResponse` decorators on controllers. The spec is the contract between backend and frontend.
+
+---
+
 ## Rules
 
+- **Swagger first.** Always expose OpenAPI spec. The frontend consumes it with Orval.
 - **NestJS's DI system.** Use `@Inject` for interfaces, no manual instantiation.
 - **Constructor injection always.** Same philosophy as Fastify, NestJS just automates it.
 - **Interface + class separated** in `types/` and `repository/`.

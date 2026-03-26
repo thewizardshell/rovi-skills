@@ -146,8 +146,37 @@ export async function ownerRoutes(fastify: FastifyInstance) {
 
 ---
 
+## Swagger / OpenAPI
+
+**Swagger first.** Every Fastify backend must expose an OpenAPI spec. The frontend depends on it to auto-generate its entire API layer with Orval.
+
+Use `@fastify/swagger` + `@fastify/swagger-ui`:
+
+```typescript
+import fastifySwagger from "@fastify/swagger";
+import fastifySwaggerUi from "@fastify/swagger-ui";
+
+await fastify.register(fastifySwagger, {
+  openapi: {
+    info: { title: "API", version: "1.0.0" },
+    components: {
+      securitySchemes: {
+        Bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+      },
+    },
+  },
+});
+
+await fastify.register(fastifySwaggerUi, { routePrefix: "/docs" });
+```
+
+Document every route with schemas. The OpenAPI spec is the contract between backend and frontend.
+
+---
+
 ## Rules
 
+- **Swagger first.** Always expose OpenAPI spec. The frontend consumes it with Orval.
 - **`entities/` not `modules/`.** Each folder is one entity.
 - **Inline DI in controllers.** Instantiate repository → service right there. No separate DI file.
 - **Constructor injection in services.** Dependencies via constructor, never as method params.

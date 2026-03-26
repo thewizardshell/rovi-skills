@@ -8,7 +8,9 @@ description: "Next.js patterns: App Router, Server Components, TanStack Query fo
 ## Stack
 
 - **App Router** (not Pages Router)
+- **Orval** for auto-generating API hooks from OpenAPI specs
 - **TanStack Query** for client-side server state
+- **Axios** (preferred over fetch) for client-side HTTP
 - **Zustand or Jotai** for global client state
 - **Server Components** by default, `"use client"` only when needed
 - **framer-motion** for animations (see rovi-design skill)
@@ -19,6 +21,11 @@ description: "Next.js patterns: App Router, Server Components, TanStack Query fo
 
 ```
 src/
+  api/
+    mutator/
+      custom-instance.ts     > Axios instance (same as rovi-react)
+    model/                   > Orval generated types
+    endpoints/               > Orval generated hooks (by tag)
   app/
     layout.tsx
     page.tsx
@@ -80,6 +87,7 @@ Same as React — one store per entity with Zustand/Jotai. Wrap provider at layo
 ## Rules
 
 - **App Router only.** No Pages Router.
+- **Orval + Axios for client API.** Same setup as rovi-react (see rovi-react skill for `orval.config.ts` and `custom-instance.ts`).
 - **Server Components by default.** `"use client"` only for interactivity.
 - **TanStack Query for client fetching.** Server Components use direct fetch/server actions.
 - **Global store for client state.** Same pattern as rovi-react.
