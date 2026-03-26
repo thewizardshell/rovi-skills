@@ -5,58 +5,51 @@
 Every store follows this structure regardless of the state library (Zustand, Pinia, Jotai, Redux). Visually separated sections, always with loading and error state, try-catch on every async action.
 
 ```typescript
+// Pattern: one store per entity, separated sections, loading + error state
+
 /*================ */
 /*   STATE          */
 /*================ */
-const clients = ref<Array<Client>>([])
+const entities = ref<Array<Entity>>([])
 const isLoading = ref<boolean>(false)
 const error = ref<string | null>(null)
 
 /*================ */
 /*   COMPUTED       */
 /*================ */
-const hasClients = computed(() => clients.value.length > 0)
-const totalClients = computed(() => clients.value.length)
+const hasEntities = computed(() => entities.value.length > 0)
+const totalEntities = computed(() => entities.value.length)
 
 /*================ */
 /*   ACTIONS        */
 /*================ */
 
-/**
- * Obtiene todos los clientes desde el servidor y actualiza el estado local.
- * Si falla, guarda el mensaje de error en el estado para que la UI lo muestre.
- */
-async function getClients(): Promise<void> {
+async function fetchEntities(): Promise<void> {
   try {
     isLoading.value = true
     error.value = null
-    const response = await api.clients.getAll()
-    clients.value = response
+    const response = await api.entities.getAll()
+    entities.value = response
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error al obtener los clientes'
+    const message = err instanceof Error ? err.message : 'Failed to fetch entities'
     error.value = message
-    console.error('Hubo un error al obtener los clientes:', err)
+    console.error('Failed to fetch entities:', err)
   } finally {
     isLoading.value = false
   }
 }
 
-/**
- * Crea un nuevo cliente y lo agrega al estado local sin necesidad
- * de volver a pedir toda la lista al servidor.
- * Si falla, lanza el error para que el componente que llamó pueda reaccionar.
- */
-async function createClient(data: CreateClientData): Promise<Client> {
+async function createEntity(data: CreateEntityData): Promise<Entity> {
   try {
     isLoading.value = true
     error.value = null
-    const newClient = await api.clients.create(data)
-    clients.value.push(newClient)
-    return newClient
+    const newEntity = await api.entities.create(data)
+    entities.value.push(newEntity)
+    return newEntity
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error al crear el cliente'
+    const message = err instanceof Error ? err.message : 'Failed to create entity'
     error.value = message
-    console.error('Hubo un error al crear el cliente:', err)
+    console.error('Failed to create entity:', err)
     throw err
   } finally {
     isLoading.value = false

@@ -3,26 +3,25 @@
 ## Domain Entity
 
 ```typescript
-export class User implements IUser {
+// Pattern: domain class with validation logic, no infrastructure dependencies
+export class Entity implements IEntity {
   id: number;
-  role: string;
+  name: string;
   email: string;
-  createdTime: Date;
-  password: string;
+  createdAt: Date;
 
-  constructor(id: number, role: string, email: string, createdTime: Date, password: string) {
+  constructor(id: number, name: string, email: string, createdAt: Date) {
     this.id = id;
-    this.role = role;
+    this.name = name;
     this.email = email;
-    this.createdTime = createdTime;
-    this.password = password;
+    this.createdAt = createdAt;
   }
 
-  /** Valida formato antes de asignar — la regla vive aqui y no en infra */
+  // Business rules live in the domain — not in services or infrastructure
   setEmail(newEmail: string): string {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail)) {
-      throw new Error('El correo electrónico no es válido');
+      throw new Error("Invalid email format");
     }
     this.email = newEmail;
     return this.email;
@@ -33,41 +32,32 @@ export class User implements IUser {
 ## Repository Interface
 
 ```typescript
-export default interface IUserRepository {
-  create(user: IUser): Promise<IUser>;
-  findById(id: number): Promise<IUser>;
-  findByEmail(email: string): Promise<IUser | null>;
-  findAll(): Promise<IUser[]>;
-  delete(id: number): Promise<IUser>;
-  update(id: number, data: Partial<IUser>): Promise<IUser>;
+// Pattern: interface defines the contract, lives in domain or types/
+export default interface IEntityRepository {
+  create(entity: IEntity): Promise<IEntity>;
+  findById(id: number): Promise<IEntity>;
+  findAll(): Promise<IEntity[]>;
+  delete(id: number): Promise<IEntity>;
+  update(id: number, data: Partial<IEntity>): Promise<IEntity>;
 }
 ```
 
 ## Use Case
 
 ```typescript
+// Pattern: single-responsibility use case, receives repo interface via DI
 @Injectable()
-export class CreateUser {
+export class CreateEntity {
   constructor(
-    @Inject('IUserRepository') private readonly userRepository: IUserRepository,
-    private readonly encryptService: EncryptService,
+    @Inject('IEntityRepository') private readonly entityRepository: IEntityRepository,
   ) {}
 
-  async execute(data: IUser): Promise<IUser> {
+  async execute(data: IEntity): Promise<IEntity> {
     try {
-      const existingUser = await this.userRepository.findByEmail(data.email);
-      if (existingUser) {
-        throw new Error('El usuario ya existe');
-      }
-
-      const hashedPassword = await this.encryptService.encrypt(data.password);
-      data.password = hashedPassword;
-
-      const user = UserFactory.createClient(data.id, data.email, data.password);
-
-      return await this.userRepository.create(user);
+      // Business validation lives in the use case
+      return await this.entityRepository.create(data);
     } catch (error: unknown) {
-      throw new Error(`Error al crear el usuario: ${(error as Error).message}`);
+      throw new Error(`Failed to create entity: ${(error as Error).message}`);
     }
   }
 }
@@ -76,53 +66,50 @@ export class CreateUser {
 ## Concrete Repository
 
 ```typescript
+// Pattern: implements interface, handles persistence details
 @Injectable()
-export class UserRepositoryPrisma implements IUserRepository {
+export class EntityRepositoryPrisma implements IEntityRepository {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: IUser): Promise<IUser> {
-    return this.prisma.user.create({
+  async create(data: IEntity): Promise<IEntity> {
+    return this.prisma.entity.create({
       data: {
-        role: data.role,
+        name: data.name,
         email: data.email,
-        createdTime: new Date(),
-        password: data.password,
+        createdAt: new Date(),
       },
     });
   }
 
-  async findById(id: number): Promise<IUser> {
-    return this.prisma.user.findUnique({ where: { id: Number(id) } });
+  async findById(id: number): Promise<IEntity> {
+    return this.prisma.entity.findUnique({ where: { id: Number(id) } });
   }
 
-  async findByEmail(email: string): Promise<IUser> {
-    return this.prisma.user.findUnique({ where: { email } });
+  async findAll(): Promise<IEntity[]> {
+    return this.prisma.entity.findMany();
   }
 
-  async findAll(): Promise<IUser[]> {
-    return this.prisma.user.findMany();
-  }
-
-  async delete(id: number): Promise<IUser> {
-    return this.prisma.user.delete({ where: { id: Number(id) } });
+  async delete(id: number): Promise<IEntity> {
+    return this.prisma.entity.delete({ where: { id: Number(id) } });
   }
 }
 ```
 
 ## Factory
 
-Encapsulates entity creation when there are variants (roles, types, different initial states).
+Encapsulates entity creation when there are variants (roles, types, different initial states). Only use when explicitly requested.
 
 ## Controller / Routes
 
 ```typescript
-async createUser(request, reply) {
+// Pattern: controller delegates to use case, handles HTTP concerns only
+async createEntity(request, reply) {
   try {
-    const result = await this.createUserUseCase.execute(request.body);
-    return reply.status(201).send({ message: 'Usuario creado', data: result });
+    const result = await this.createEntityUseCase.execute(request.body);
+    return reply.status(201).send({ data: result });
   } catch (error) {
     if (error instanceof HttpException) throw error;
-    throw new DatabaseOperationException('No se pudo crear el usuario', error);
+    throw new DatabaseOperationException('Failed to create entity', error);
   }
 }
 ```
@@ -130,17 +117,18 @@ async createUser(request, reply) {
 ## Middleware
 
 ```typescript
+// Pattern: auth middleware extracts and validates token
 export async function jwtAuth(request, reply) {
   const authHeader = request.headers['authorization'];
   if (!authHeader) {
-    return reply.status(401).send({ message: 'El token no ha sido encontrado' });
+    return reply.status(401).send({ message: 'Token not found' });
   }
 
   const token = authHeader.split(' ')[1];
   const payload = jwtService.verifyToken(token);
 
   if (!payload) {
-    return reply.status(401).send({ message: 'Token inválido' });
+    return reply.status(401).send({ message: 'Invalid token' });
   }
 
   request.user = payload;
@@ -150,6 +138,7 @@ export async function jwtAuth(request, reply) {
 ## Auxiliary Services
 
 ```typescript
+// Pattern: utility service with constructor injection
 export class JwtService {
   private secretKey: string;
 
@@ -164,8 +153,7 @@ export class JwtService {
   verifyToken(token: string): Record<string, any> | null {
     try {
       return jwt.verify(token, this.secretKey) as Record<string, any>;
-    } catch (error) {
-      console.error('Error al verificar el token:', error);
+    } catch {
       return null;
     }
   }

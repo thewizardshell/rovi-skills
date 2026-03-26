@@ -69,6 +69,7 @@ Everything else (`model/`, `endpoints/`, types, hooks, query keys) is auto-gener
 File: `src/api/mutator/custom-instance.ts` (the only manual file in `api/`)
 
 ```typescript
+// Pattern: Axios instance with Bearer interceptor, exported as generic function
 import Axios from "axios";
 import type { AxiosRequestConfig, AxiosError } from "axios";
 
@@ -101,6 +102,7 @@ export type BodyType<BodyData> = BodyData;
 ### orval.config.ts
 
 ```typescript
+// Pattern: tags-split mode, react-query client, custom Axios mutator
 import { defineConfig } from "orval";
 
 export default defineConfig({
@@ -144,25 +146,21 @@ npx orval
 Orval auto-generates typed hooks, query keys, fetcher functions, and TypeScript models. **Always use what Orval exposes** — it abstracts the entire API layer:
 
 ```typescript
-// Everything is auto-generated: hooks, types, query keys, mutations
-import { useListUsers, useCreateUser, useShowUserById } from "../api/endpoints/users/users";
-import type { User, CreateUserBody } from "../api/model";
+// Pattern: import and use Orval-generated hooks directly
+// Hook names, types, and query keys are all auto-generated from the OpenAPI spec
+import { useListEntities, useCreateEntity, useShowEntityById } from "../api/endpoints/entities/entities";
+import type { Entity, CreateEntityBody } from "../api/model";
 
-function UserList() {
-  // useListUsers = auto-generated useQuery hook with typed response
-  const { data, isLoading, error } = useListUsers();
+function EntityList() {
+  // Auto-generated useQuery hook with typed response
+  const { data, isLoading, error } = useListEntities();
 
-  // useCreateUser = auto-generated useMutation with typed body + invalidation
-  const { mutate: createUser, isPending } = useCreateUser();
+  // Auto-generated useMutation with typed body
+  const { mutate: createEntity, isPending } = useCreateEntity();
 
-  const handleCreate = (userData: CreateUserBody) => {
-    createUser({ data: userData });
+  const handleCreate = (entityData: CreateEntityBody) => {
+    createEntity({ data: entityData });
   };
-}
-
-function UserDetail({ id }: { id: string }) {
-  // useShowUserById = auto-generated hook, already typed, already cached
-  const { data: user } = useShowUserById(id);
 }
 ```
 
@@ -175,24 +173,25 @@ function UserDetail({ id }: { id: string }) {
 If there is no OpenAPI spec and Orval cannot be used, write hooks manually:
 
 ```typescript
+// Pattern: manual hooks follow the same shape Orval would generate
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customInstance } from "../../api/mutator/custom-instance";
 
-export function useUsers() {
+export function useEntities() {
   return useQuery({
-    queryKey: ["users"],
-    queryFn: () => customInstance<User[]>({ url: "/users", method: "GET" }),
+    queryKey: ["entities"],
+    queryFn: () => customInstance<Entity[]>({ url: "/entities", method: "GET" }),
   });
 }
 
-export function useCreateUser() {
+export function useCreateEntity() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateUserData) =>
-      customInstance<User>({ url: "/users", method: "POST", data }),
+    mutationFn: (data: CreateEntityData) =>
+      customInstance<Entity>({ url: "/entities", method: "POST", data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["entities"] });
     },
   });
 }
@@ -209,8 +208,8 @@ src/
   routes/
     __root.tsx               > Root layout
     index.tsx                > /
-    tasks/
-      index.tsx              > /tasks
+    entities/
+      index.tsx              > /entities
     login/
       index.tsx              > /login
     dashboard/
@@ -226,69 +225,54 @@ Every route file uses `createFileRoute` with:
 - **`component`** — the actual page component
 
 ```typescript
+// Pattern: createFileRoute with loader + Orval query options for prefetching
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  useGetUsersUserIdTasks,
-  getGetUsersUserIdTasksQueryOptions,
-  usePostTasks,
-  usePatchTasksIdStatus,
-  useDeleteTasksId,
-  getGetUsersUserIdTasksQueryKey,
-  type DomainTask,
-} from "@/api/endpoints";
 
-export const Route = createFileRoute("/tasks")({
+// Orval generates: hooks, query options, query keys, types — import what you need
+// The actual names depend on your OpenAPI spec endpoints and tags
+
+export const Route = createFileRoute("/entities")({
   loader: async ({ context }) => {
-    const userId = Number(localStorage.getItem("userId") || "1");
+    // Use Orval's generated query options to prefetch
     await context.queryClient.ensureQueryData(
-      getGetUsersUserIdTasksQueryOptions(userId),
+      getListEntitiesQueryOptions(),
     );
   },
-  pendingComponent: () => <LoadingSpinner text="Cargando tareas..." />,
+  pendingComponent: () => <LoadingSpinner />,
   errorComponent: ({ error }) => <ErrorCard message={error.message} />,
-  component: TasksComponent,
+  component: EntitiesPage,
 });
 
-function TasksComponent() {
+function EntitiesPage() {
   const queryClient = useQueryClient();
-  const userId = Number(localStorage.getItem("userId") || "1");
 
-  // All hooks are Orval-generated — typed, cached, with query keys
-  const { data: tasks } = useGetUsersUserIdTasks(userId, {
+  // Orval-generated hook — typed, cached, with query keys
+  const { data: entities } = useListEntities({
     query: { refetchOnWindowFocus: false, staleTime: 1000 * 60 * 5 },
   });
 
-  const createMutation = usePostTasks({
+  // Orval-generated mutation with invalidation via generated query keys
+  const createMutation = useCreateEntity({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({
-          queryKey: getGetUsersUserIdTasksQueryKey(userId),
+          queryKey: getListEntitiesQueryKey(),
         });
       },
     },
   });
 
-  const updateStatusMutation = usePatchTasksIdStatus({
+  const deleteMutation = useDeleteEntity({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({
-          queryKey: getGetUsersUserIdTasksQueryKey(userId),
+          queryKey: getListEntitiesQueryKey(),
         });
       },
     },
   });
 
-  const deleteMutation = useDeleteTasksId({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: getGetUsersUserIdTasksQueryKey(userId),
-        });
-      },
-    },
-  });
-
-  // ... render with tasks, mutations
+  // ... render with entities, mutations
 }
 ```
 
@@ -302,22 +286,22 @@ function TasksComponent() {
 ## Component Pattern
 
 ```typescript
-// features/Users/components/UserCard.tsx
-interface UserCardProps {
-  user: User;
+// Pattern: typed props, function component, framer-motion whileInView
+interface EntityCardProps {
+  entity: Entity;
   onDelete: (id: string) => void;
 }
 
-export function UserCard({ user, onDelete }: UserCardProps) {
+export function EntityCard({ entity, onDelete }: EntityCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
     >
-      <h3>{user.name}</h3>
-      <p>{user.email}</p>
-      <button onClick={() => onDelete(user.id)}>Eliminar</button>
+      <h3>{entity.name}</h3>
+      <p>{entity.description}</p>
+      <button onClick={() => onDelete(entity.id)}>Eliminar</button>
     </motion.div>
   );
 }
