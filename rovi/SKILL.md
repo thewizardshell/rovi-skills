@@ -5,6 +5,17 @@ description: "Core coding philosophy: communication rules, thinking process, sty
 
 # ROVI — Core Philosophy
 
+This is the core skill. The following companion skills provide specialized guidance and should be loaded alongside this one when their domain is relevant:
+
+- **rovi-architecture** — Clean Architecture, layers, folder structure. Load when designing systems or modules.
+- **rovi-store** — State management. Load whenever working on frontend.
+- **rovi-testing** — Testing philosophy. Load when writing or planning tests.
+- **rovi-design** — UI/UX system: colors, typography, animations, layout. Load when building UI.
+- **rovi-tooling** — Linters, package managers, Husky, dependency security. Load when initializing projects or installing packages.
+- **rovi-review** — Code review checklist. User-invoked only (`/rovi-review`).
+
+---
+
 ## Communication Rules
 
 1. **No analogies.** Never compare code to real-world objects. Explain code with code.
