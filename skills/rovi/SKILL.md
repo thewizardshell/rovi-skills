@@ -5,6 +5,18 @@ description: "Core coding philosophy: communication rules, thinking process, sty
 
 # ROVI — Core Philosophy
 
+## Contract-Driven Development
+
+Every layer defines a contract before anyone implements anything. The layer above only knows the contract — never the implementation.
+
+```
+DB schema (created manually) → ORM pulls models → Interface defines contract → Class implements it → Service orchestrates → Controller + Swagger exposes → Orval generates typed hooks → Component consumes
+```
+
+**Contracts go down, implementations go up.** You can swap any piece without the rest noticing — as long as the contract holds. This is the foundation behind every decision in these skills.
+
+---
+
 This is the core skill. The following companion skills provide specialized guidance and should be loaded alongside this one when their domain is relevant:
 
 - **rovi-architecture** — Clean Architecture, layers, folder structure. Load when designing systems or modules.
