@@ -41,7 +41,46 @@ Every restriction has a reason, and every reason connects to the next:
 - **Orval mandatory** — because I'm not writing API code by hand when a machine can do it typed and correct.
 - **Utils is a real module** — because a project has security, validation, formatting, logging — not just errors.
 
-This is how I personally like to work. It's not the only way, and I'm flexible when the context calls for it. But this flow has consistently worked for me — so I built it into a plugin.
+### The idea behind it
+
+If you look at the full picture, this is basically **Dependency Inversion applied across the entire stack** — not just inside a class, but between layers:
+
+```
+Data Layer        →  you own the schema, the ORM just reads it
+Backend Layer     →  interfaces define contracts, classes implement them
+API Contract      →  Swagger is the boundary between back and front
+Frontend Layer    →  Orval consumes the contract, components consume Orval
+```
+
+Dependency Inversion says: high-level modules should not depend on low-level modules — both should depend on abstractions. Here, no layer depends on another layer's implementation. The service doesn't know if the repo uses Drizzle or Prisma. The DB doesn't know there's an ORM at all. Everyone depends on the contract in between.
+
+The frontend is a good example. Sure, the front never talks to the backend directly — that's normal. But usually someone still has to write the types and fetch calls by hand, copying what the backend returns. That's an implicit, manual, fragile dependency. Here, Orval reads the Swagger spec and generates everything — types, hooks, query keys. The frontend doesn't need a human to tell it what the backend returns. The contract does it automatically. That's the difference.
+
+I didn't plan it this way from the start. This structure came out naturally while building the agent — describing how I work forced me to see the pattern that was already there. It's not a coincidence. When you consistently separate "what something does" from "how it does it" at every layer, you end up with Dependency Inversion whether you meant to or not.
+
+And in practice, it pays off. Clients change their minds, requirements shift, you swap a database or a framework — and the damage stays contained in one layer because nothing else was coupled to it.
+
+### Who is this for
+
+This is not for every project. If you're building an MVP, a quick prototype, or a small experiment, this is probably too much. The abstractions, the interfaces, the mandatory Swagger — it's overhead that doesn't pay off on something you might throw away next week.
+
+Where it shines is on projects that grow, that change, that have clients who change their minds fast. That's where the contracts save you. You come back to the code three months later and the JSDoc tells you why, the Swagger tells you what, and the OOP structure tells you where.
+
+### Why I built this
+
+I got tired of two things:
+
+**Rewriting types twice.** I'd define an interface in the backend, then manually recreate the same types in the frontend. When the backend changed a field, I had to go find every place in the frontend and update it by hand. Orval fixed that — the spec generates everything, and if something changes, TypeScript yells exactly where it broke.
+
+**Not understanding my own code.** When I came back to a project after weeks, flat functions and loose files told me nothing. OOP with clear interfaces, classes with getters/setters, well-written JSDoc — that gives me context immediately. I read the contract and I know what it does without tracing through the implementation.
+
+### What this actually is
+
+This is my personal agent. It's how I see software development — a set of ideas that have worked for me with real clients who change requirements constantly. It gives me flexibility when things shift, and it gives me feedback when I return to code I haven't touched in a while.
+
+These ideas will probably evolve. Maybe I'll drop something, maybe I'll add something new. But right now, this is what works.
+
+I know it looks over-engineered to some people. That's fair. But every abstraction here exists because I needed it at some point — not because it looks good on paper. If you try it and some part doesn't fit your workflow, cut it. The skills are modular for a reason.
 
 ## Skills
 
