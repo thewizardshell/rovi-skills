@@ -238,6 +238,50 @@ html {
 
 ---
 
+## Modals & Overlays
+
+- **Modals must be perfectly centered** — both horizontally and vertically. Use `position: fixed` + `inset: 0` + flexbox centering. No manual `top: 50%; transform: translateY(-50%)` hacks that break on different viewports.
+- **Backdrop always present.** Semi-transparent overlay behind the modal. Click on backdrop closes the modal.
+- **Content must not overflow.** If modal content is long, add `max-height` with `overflow-y: auto` on the body. The modal itself stays centered.
+- **Close button always visible** — top-right corner, always accessible.
+
+```css
+/* Pattern: modal centering — always this way */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+}
+
+.modal-content {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+```
+
+---
+
+## UI Quality Baseline
+
+**No basic UI errors.** Every interface must pass these checks before being considered done:
+
+- **Alignment:** Elements that should be aligned are aligned. No off-by-pixel text, no misaligned buttons, no uneven spacing.
+- **Overflow:** Text does not overflow its container. Long text truncates with ellipsis or wraps properly.
+- **Responsiveness:** Layouts do not break on common viewport sizes. Flex/grid layouts adapt correctly.
+- **Spacing consistency:** Use the spacing scale (`--space-*`). No arbitrary pixel values creating visual inconsistency.
+- **Interactive states:** Buttons have hover/active/disabled states. Links have hover states. Inputs have focus states.
+- **Empty states:** Lists and tables have a proper empty state — not a blank void.
+- **Loading states:** Async content shows a loading indicator, not a layout jump.
+- **Z-index sanity:** Modals, dropdowns, and tooltips stack correctly. Nothing hidden behind something it should be above.
+
+These are not optional polish — they are the minimum bar. An interface with these errors is not done.
+
+---
+
 ## Hard Rules
 
 ### Never
@@ -247,6 +291,8 @@ html {
 - Create abrupt background transitions between sections.
 - Let elements appear without animation.
 - Use flashy, neon, or overly saturated colors.
+- Ship a modal that is not perfectly centered.
+- Leave misaligned elements, overflowing text, or broken layouts.
 
 ### Always
 - Define all design tokens in `global.css` as CSS variables.
@@ -257,3 +303,5 @@ html {
 - Set `scroll-behavior: smooth` globally.
 - Prefer `Onest` as primary font, `IBM Plex Sans` as secondary.
 - Stagger animations when multiple elements enter together.
+- Center modals with `position: fixed` + `inset: 0` + flexbox.
+- Verify alignment, overflow, spacing, and interactive states before finishing any UI work.

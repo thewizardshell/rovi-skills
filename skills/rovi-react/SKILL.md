@@ -311,7 +311,7 @@ export function EntityCard({ entity, onDelete }: EntityCardProps) {
 
 ## Rules
 
-- **Orval first.** If there is an OpenAPI spec, always use Orval to generate hooks. No manual API code.
+- **Orval is mandatory.** If there is a backend, it must expose an OpenAPI spec, and Orval must be configured before writing any API-consuming code. Do not skip this. The only exception is if the user explicitly says they do not want Orval.
 - **Axios over fetch.** Always use the custom Axios instance, never raw fetch.
 - **TanStack Router file-based.** `routes/` folder, each route is a folder with `index.tsx`, `createFileRoute` with `loader`/`pendingComponent`/`errorComponent`.
 - **Prefetch in loader.** Use `ensureQueryData` with Orval's `get*QueryOptions()` so data is ready before mount.

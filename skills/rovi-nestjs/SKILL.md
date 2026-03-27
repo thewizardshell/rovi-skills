@@ -26,7 +26,8 @@ src/
       repository/
         [entityName].repository.ts
       types/
-        [entityName].interface.ts
+        [entityName].interface.ts      > Interface defining the entity contract
+        [entityName].entity.ts         > Class implementing the interface with getters/setters
         [entityName].dto.ts
   auth/
     guards/
@@ -109,13 +110,56 @@ export class EntityModule {}
 
 ---
 
-## Repository
+## Entity Types
 
-Same pattern: interface in `types/`, implementation in `repository/`.
+`types/` always contains: the **interface** defining the entity contract, a **class** implementing it with getters and setters, and DTOs.
 
 ```typescript
-// Pattern: interface defines contract
+// Pattern: interface defines the entity shape
 // types/entity.interface.ts
+export interface IEntity {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Pattern: class implements interface with constructor, getters, and setters
+// types/entity.entity.ts
+import type { IEntity } from "./entity.interface";
+
+export class Entity implements IEntity {
+  constructor(
+    private _id: number,
+    private _name: string,
+    private _description: string,
+    private _createdAt: Date,
+    private _updatedAt: Date,
+  ) {}
+
+  get id(): number { return this._id; }
+  get name(): string { return this._name; }
+  get description(): string { return this._description; }
+  get createdAt(): Date { return this._createdAt; }
+  get updatedAt(): Date { return this._updatedAt; }
+
+  set name(value: string) { this._name = value; }
+  set description(value: string) { this._description = value; }
+}
+```
+
+The class is **not optional**. Every entity must have its interface and its implementing class with essential getters and setters.
+
+---
+
+## Repository
+
+Interface in `types/`, implementation in `repository/`.
+
+```typescript
+// Pattern: repository interface defines contract
+// types/entity.interface.ts (can be in same file as entity interface or separate)
 export interface IEntityRepository {
   findAll(): Promise<Entity[]>;
   findById(id: number): Promise<Entity>;
@@ -143,7 +187,8 @@ Use `@nestjs/swagger` with `DocumentBuilder`. Use `@ApiTags`, `@ApiOperation`, `
 
 ## Rules
 
-- **Swagger first.** Always expose OpenAPI spec. The frontend consumes it with Orval.
+- **Swagger first — non-negotiable.** Always expose OpenAPI spec. Without it, Orval cannot generate the frontend API layer. Do not skip or defer this step.
+- **Entity class is mandatory.** Every entity in `types/` must have an interface file and a class file implementing it with getters and setters. The class cannot be omitted.
 - **NestJS's DI system.** Use `@Inject` for interfaces, no manual instantiation.
 - **Constructor injection always.** Same philosophy as Fastify, NestJS just automates it.
 - **Interface + class separated** in `types/` and `repository/`.

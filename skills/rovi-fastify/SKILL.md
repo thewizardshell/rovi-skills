@@ -25,7 +25,8 @@ src/
       repository/
         entityName.repository.ts
       types/
-        entityName.interface.ts
+        entityName.interface.ts      > Interface defining the entity contract
+        entityName.entity.ts         > Class implementing the interface with getters/setters
         entityName.type.ts
   auth/
     middleware/
@@ -88,13 +89,56 @@ export class EntityService {
 
 ---
 
+## Entity Types
+
+`types/` always contains two files: the **interface** defining the entity contract and a **class** implementing it with getters and setters.
+
+```typescript
+// Pattern: interface defines the entity shape
+// types/entity.interface.ts
+export interface IEntity {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Pattern: class implements interface with constructor, getters, and setters
+// types/entity.entity.ts
+import type { IEntity } from "./entity.interface";
+
+export class Entity implements IEntity {
+  constructor(
+    private _id: number,
+    private _name: string,
+    private _description: string,
+    private _createdAt: Date,
+    private _updatedAt: Date,
+  ) {}
+
+  get id(): number { return this._id; }
+  get name(): string { return this._name; }
+  get description(): string { return this._description; }
+  get createdAt(): Date { return this._createdAt; }
+  get updatedAt(): Date { return this._updatedAt; }
+
+  set name(value: string) { this._name = value; }
+  set description(value: string) { this._description = value; }
+}
+```
+
+The class is **not optional**. Every entity must have its interface and its implementing class with essential getters and setters.
+
+---
+
 ## Repository Pattern
 
 Interface in `types/`, implementation in `repository/`.
 
 ```typescript
 // Pattern: interface defines contract, class implements it
-// types/entity.interface.ts
+// types/entity.interface.ts (repository interface, same file or separate)
 export interface IEntityRepository {
   findAll(): Promise<Entity[]>;
   findById(id: number): Promise<Entity>;
@@ -134,7 +178,8 @@ Use `@fastify/swagger` + `@fastify/swagger-ui`. Document every route with schema
 
 ## Rules
 
-- **Swagger first.** Always expose OpenAPI spec. The frontend consumes it with Orval.
+- **Swagger first — non-negotiable.** Always expose OpenAPI spec. Without it, Orval cannot generate the frontend API layer. Do not skip or defer this step.
+- **Entity class is mandatory.** Every entity in `types/` must have an interface file and a class file implementing it with getters and setters. The class cannot be omitted.
 - **`entities/` not `modules/`.** Each folder is one entity.
 - **Inline DI in controllers.** Instantiate repository → service right there. No separate DI file.
 - **Constructor injection in services.** Dependencies via constructor, never as method params.

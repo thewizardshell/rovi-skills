@@ -37,8 +37,10 @@ Before writing any code, follow this sequence:
 4. **Design the contracts.** Define interfaces first. Establish input/output types. Identify possible errors.
 5. **Confirm structural decisions.** Before creating folders, naming anything, or choosing how to organize the project — ask. Every framework and context has its own conventions. Do not assume folder names, entry point patterns, or project layout from previous experience or from the examples in this skill. Present a proposal and wait for confirmation.
 6. **Examples are patterns, not literal code.** Code examples in these skills show the structure and flow — how pieces connect. Never copy them verbatim. Extract the pattern, adapt it to the current project, and write clean production code. If an example has a console.log, a TODO, or an empty block, that is incidental — do not reproduce it.
-7. **Implement.** Start with domain (entities, interfaces), then use cases, then infrastructure and presentation.
-8. **Test.** Manual testing first (Postman or browser). Then write automated tests. Verify edge cases from step 1.
+7. **Swagger first in backends.** Every backend must expose a valid OpenAPI/Swagger spec before writing any frontend code. This is non-negotiable — the frontend depends on Orval to auto-generate its entire API layer from the spec. No spec = no Orval = no frontend API code. Do not skip or defer this step.
+8. **Orval is mandatory on frontends.** When there is a backend with an OpenAPI spec, Orval must be configured and working before writing any API-consuming code. If Orval is not set up, stop and configure it first. The only exception is if the user explicitly says they do not want Orval.
+9. **Implement.** Start with domain (entities, interfaces), then use cases, then infrastructure and presentation.
+10. **Test.** Manual testing first (Postman or browser). Then write automated tests. Verify edge cases from step 1.
 
 ---
 
@@ -111,6 +113,26 @@ Read `${CLAUDE_SKILL_DIR}/references/documentation-examples.md` for JSDoc patter
 
 ---
 
+## Database & ORM
+
+### ORM Preference
+
+1. **Drizzle** or **TypeORM** — preferred choices.
+2. **Prisma** — acceptable, but be aware of its large bundle size which can cause issues in serverless or constrained environments. If using Prisma, mention this trade-off.
+
+### No Migrations in Code
+
+**Never run migrations from the ORM.** The database schema is managed manually — tables are created directly in the database (via SQL scripts, a DB GUI, or manual DDL). The ORM then **pulls/introspects** the existing schema to generate its types and models.
+
+- **Drizzle:** Use `drizzle-kit pull` to introspect the database.
+- **TypeORM:** Use `synchronize: false` and define entities matching the existing tables.
+- **Prisma:** Use `prisma db pull` to introspect, never `prisma migrate`.
+- **sqlc (Go):** Already works this way — SQL queries reference existing tables.
+
+Do not generate migration files, do not run `migrate dev`, do not auto-sync schemas. The user controls the database directly.
+
+---
+
 ## Error Handling
 
 Centralized typed errors in a `utils/errors` module. Every error has a code, message, and optional metadata.
@@ -167,6 +189,7 @@ class UnauthorizedError extends AppError {
 - Put everything in one file.
 - Use `console.log` as a debugging strategy in production.
 - Ignore errors. Every error is caught, typed, and handled.
+- Run ORM migrations. No `migrate dev`, no `migrate deploy`, no auto-sync. The database schema is managed manually.
 - Sacrifice clarity for brevity.
 - Explain code with real-world analogies.
 
@@ -179,6 +202,7 @@ class UnauthorizedError extends AppError {
 - Centralize errors in a dedicated module with clear types.
 - Test. Manual first, automated after.
 - Think about swappability. Changing an external dependency should touch one file ideally.
+- Use `drizzle-kit pull`, `prisma db pull`, or equivalent introspection. The database is the source of truth.
 - Write naming in English, comments/documentation in Spanish.
 - Organize by features with consistent folder structure.
 - Use visual section separators inside files.

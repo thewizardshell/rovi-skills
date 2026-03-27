@@ -25,6 +25,7 @@ src/
       repository.py
       types/
         interface.py          > ABC (Abstract Base Class)
+        entity.py             > Class implementing the ABC with getters/setters
         schemas.py            > Pydantic models
   auth/
     middleware/
@@ -81,15 +82,72 @@ class EntityService:
 
 ---
 
+## Entity Types
+
+`types/` always contains: the **ABC interface**, a **class** implementing it with getters/setters (via `@property`), and Pydantic schemas.
+
+```python
+# Pattern: ABC defines the entity contract
+# types/interface.py
+from abc import ABC, abstractmethod
+
+class IEntity(ABC):
+    @property
+    @abstractmethod
+    def id(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def description(self) -> str: ...
+
+# Pattern: class implements ABC with properties (getters/setters)
+# types/entity.py
+from .interface import IEntity
+
+class Entity(IEntity):
+    def __init__(self, id: int, name: str, description: str, created_at, updated_at):
+        self._id = id
+        self._name = name
+        self._description = description
+        self._created_at = created_at
+        self._updated_at = updated_at
+
+    @property
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str):
+        self._name = value
+
+    @property
+    def description(self) -> str:
+        return self._description
+
+    @description.setter
+    def description(self, value: str):
+        self._description = value
+```
+
+The class is **not optional**. Every entity must have its ABC interface and its implementing class with essential getters and setters.
+
+---
+
 ## Repository
 
 ABC as interface, concrete class implementing it.
 
 ```python
-# Pattern: ABC defines contract, class implements it
-# types/interface.py
-from abc import ABC, abstractmethod
-
+# Pattern: ABC defines repository contract
+# types/interface.py (repository interface, can be in same file or separate)
 class IEntityRepository(ABC):
     @abstractmethod
     async def find_all(self) -> list: ...
@@ -116,7 +174,8 @@ Keep Pydantic `response_model` on every route — it feeds the OpenAPI spec dire
 
 ## Rules
 
-- **Swagger first.** FastAPI auto-generates it. Ensure all routes have `response_model` and typed schemas.
+- **Swagger first — non-negotiable.** FastAPI auto-generates it. Ensure all routes have `response_model` and typed schemas. Without the spec, Orval cannot generate the frontend API layer.
+- **Entity class is mandatory.** Every entity in `types/` must have an ABC interface file and a class file implementing it with `@property` getters and setters. The class cannot be omitted.
 - **`entities/` folder structure.** Same as Fastify — each entity is self-contained.
 - **`Depends()` for DI wiring** in the controller/router. Factory function that builds the chain.
 - **Constructor injection in services.** Via `__init__`, same philosophy.
