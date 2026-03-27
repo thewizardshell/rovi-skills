@@ -1,6 +1,47 @@
-# ROVI Skills
+# Rovi
 
-Modular coding style and architecture skills for Claude Code.
+Opinionated Claude Code plugin for building full-stack apps. Architecture, frameworks, design system, testing, and tooling — with strong conventions baked in.
+
+## Philosophy: Contract-Driven Development
+
+Rovi follows a simple idea: **contracts go down, implementations go up.**
+
+Every layer defines a contract before anyone implements anything. The layer above only knows the contract — never the implementation. This is how the full stack connects:
+
+```
+DB schema (you create it manually)
+  ↓ contract
+ORM pull (generates models from your DB)
+  ↓ contract
+Interface (defines what something can do)
+  ↓ contract
+Class + Repository (implements the interface)
+  ↓ contract
+Service (orchestrates business logic)
+  ↓ contract
+Controller + Swagger (exposes the API)
+  ↓ contract
+Orval (generates typed hooks from the spec)
+  ↓ contract
+React component (consumes the hooks)
+```
+
+Each layer doesn't know how the one below works. The DB doesn't know there's an ORM. The service doesn't know if the repo uses Prisma or Drizzle. The frontend doesn't know if the backend is Fastify or Go. They only know the contract.
+
+You can swap any piece without the rest noticing — as long as the contract holds.
+
+### Why this works
+
+Every restriction has a reason, and every reason connects to the next:
+
+- **No migrations** — because I control the DB directly. The schema is mine, not the ORM's.
+- **ORM pulls the schema** — because the DB is the source of truth, not the code.
+- **Interface + class mandatory** — because the interface alone doesn't exist at runtime. The class gives it shape with getters and setters.
+- **Swagger first** — because without it, Orval can't generate the frontend API layer.
+- **Orval mandatory** — because I'm not writing API code by hand when a machine can do it typed and correct.
+- **Utils is a real module** — because a project has security, validation, formatting, logging — not just errors.
+
+This is how I personally like to work. It's not the only way, and I'm flexible when the context calls for it. But this flow has consistently worked for me — so I built it into a plugin.
 
 ## Skills
 
@@ -13,7 +54,7 @@ Modular coding style and architecture skills for Claude Code.
 | `rovi-design` | Auto-invoked | UI/UX design system: solid colors, abstract shapes, framer-motion, CSS variables, smooth scroll |
 | `rovi-tooling` | Auto-invoked | Linters (Biome > ESLint), package managers (bun/pnpm), .npmrc ignore-scripts, deps |
 | `rovi-fastify` | Auto-invoked | Fastify: entities/ structure, inline DI in controllers, constructor injection |
-| `rovi-react` | Auto-invoked | React: TanStack Query + Router, global store, feature-based structure |
+| `rovi-react` | Auto-invoked | React: Orval + TanStack Query + Router, global store, feature-based structure |
 | `rovi-nextjs` | Auto-invoked | Next.js: App Router, Server Components, TanStack, store global |
 | `rovi-nestjs` | Auto-invoked | NestJS: same philosophy with decorators and built-in DI |
 | `rovi-fastapi` | Auto-invoked | FastAPI: entities/ structure, Depends() DI, ABC interfaces, Pydantic |
@@ -22,66 +63,44 @@ Modular coding style and architecture skills for Claude Code.
 
 ## Stack
 
-TypeScript, JavaScript, Python, Go | React, Next.js, Vue | NestJS, Fastify, Flask, FastAPI, Gin | Jotai, Redux, Zustand, Pinia
+TypeScript, JavaScript, Python, Go | React, Next.js, Vue | NestJS, Fastify, FastAPI, Gin | Drizzle, TypeORM, Prisma | Orval, TanStack Query, Axios | Zustand, Jotai
 
 ## Installation
 
-### Claude Code (personal)
-
 ```bash
-# All skills
-mkdir -p ~/.claude/skills
-cp -r rovi rovi-architecture rovi-store rovi-testing rovi-design rovi-tooling rovi-review ~/.claude/skills/
-
-# Agent (optional — requires Context7 MCP)
-mkdir -p ~/.claude/agents
-cp .claude/agents/docs-lookup.md ~/.claude/agents/
-```
-
-### Claude Code (project-level, shared via git)
-
-```bash
-# All skills
-mkdir -p .claude/skills
-cp -r rovi rovi-architecture rovi-store rovi-testing rovi-design rovi-review .claude/skills/
-
-# Agent (optional)
-mkdir -p .claude/agents
-cp .claude/agents/docs-lookup.md .claude/agents/
-
-git add .claude/
-git commit -m "Add rovi skills"
+claude plugin install rovi-skills
 ```
 
 ## Structure
 
 ```
 rovi-skills/
-├── rovi/                           # Core philosophy
-│   ├── SKILL.md
-│   └── references/
-│       └── documentation-examples.md
-├── rovi-architecture/              # Clean Architecture + folders
-│   ├── SKILL.md
-│   └── references/
-│       └── layer-examples.md
-├── rovi-store/                     # State management
-│   ├── SKILL.md
-│   └── references/
-│       └── store-examples.md
-├── rovi-testing/                   # Testing
-│   ├── SKILL.md
-│   └── references/
-│       └── testing-examples.md
-├── rovi-design/                    # UI/UX design system
-│   └── SKILL.md
-├── rovi-tooling/                   # Linters, package managers, security
-│   └── SKILL.md
-├── rovi-review/                    # Code review (user-invoked)
-│   └── SKILL.md
-├── .claude/
-│   └── agents/
-│       └── docs-lookup.md          # Background docs lookup (Context7)
+├── .claude-plugin/
+│   └── plugin.json
+├── skills/
+│   ├── rovi/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   ├── rovi-architecture/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   ├── rovi-store/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   ├── rovi-testing/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   ├── rovi-design/
+│   ├── rovi-tooling/
+│   ├── rovi-fastify/
+│   ├── rovi-react/
+│   ├── rovi-nextjs/
+│   ├── rovi-nestjs/
+│   ├── rovi-fastapi/
+│   ├── rovi-go/
+│   └── rovi-review/
+├── agents/
+│   └── docs-lookup.md
 └── README.md
 ```
 
@@ -107,16 +126,6 @@ The `docs-lookup` agent requires Context7 MCP. If not configured, the skill will
 ```
 
 Without Context7, the skill will offer WebSearch as fallback.
-
-## Best Practices Applied
-
-- **Modular skills** — one skill per concern, not a monolith
-- **YAML frontmatter** — `name`, `description`, and skill-specific fields
-- **`${CLAUDE_SKILL_DIR}`** — portable references to bundled files
-- **`disable-model-invocation`** — task skills only run when user invokes them
-- **`allowed-tools` scoped** — rovi-review restricted to Read, Glob, Grep
-- **`context: fork`** — rovi-review runs in isolated subagent
-- **Dynamic context** — rovi-review injects `git diff` output automatically
 
 ## License
 
