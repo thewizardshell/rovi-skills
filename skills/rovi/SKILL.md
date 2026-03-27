@@ -135,7 +135,26 @@ Do not generate migration files, do not run `migrate dev`, do not auto-sync sche
 
 ## Error Handling
 
-Centralized typed errors in a `utils/errors` module. Every error has a code, message, and optional metadata.
+`utils/` is **not just errors**. It is the home for all shared utilities used across the application. Errors are one module inside it, not the only one. When setting up a project, think about what the app actually needs and create the appropriate modules.
+
+### Common utils/ modules
+
+```
+utils/
+  errors/              > Typed error classes (AppError, NotFoundError, etc.)
+  security/            > Hashing (bcrypt/argon2), token generation, encryption helpers
+  validators/          > Shared validation functions (email, phone, RUT, date ranges, etc.)
+  formatters/          > Date formatting, currency, string normalization, slugify
+  constants/           > App-wide constants (roles, statuses, limits, regex patterns)
+  logger/              > Structured logging setup (pino, winston, etc.)
+  helpers/             > Small pure functions used everywhere (sleep, retry, chunk, etc.)
+```
+
+Not every project needs all of these — but do not limit `utils/` to just `errors/`. Think about what the project requires: if there is auth, there is `security/`. If there are forms, there are `validators/`. If there are dates or money, there are `formatters/`.
+
+### Errors
+
+Centralized typed errors in `utils/errors`. Every error has a code, message, and optional metadata.
 
 ```typescript
 class AppError extends Error {
@@ -200,6 +219,7 @@ class UnauthorizedError extends AppError {
 - Type strictly. `strict: true`, no `any`, explicit types.
 - Structure in layers. Domain > Application > Infrastructure > Presentation.
 - Centralize errors in a dedicated module with clear types.
+- Build out `utils/` with all modules the project needs — security, validators, formatters, constants, logger — not just errors.
 - Test. Manual first, automated after.
 - Think about swappability. Changing an external dependency should touch one file ideally.
 - Use `drizzle-kit pull`, `prisma db pull`, or equivalent introspection. The database is the source of truth.
