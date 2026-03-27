@@ -1,0 +1,12 @@
+{
+  "name": "rovi-skills",
+  "version": "1.0.0",
+  "description": "Opinionated skills for building apps with Claude Code — architecture, frameworks, testing, tooling, and more.",
+  "author": {
+    "name": "Vicente Roa",
+    "url": "https://github.com/thewizardshell"
+  },
+  "repository": "https://github.com/thewizardshell/rovi-skills",
+  "license": "MIT",
+  "keywords": ["claude-code", "skills", "architecture", "react", "nestjs", "nextjs", "fastify", "fastapi", "go"]
+}
